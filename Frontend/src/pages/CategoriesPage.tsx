@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Plus } from 'lucide-react'
-import type { FoodCategory } from '@/types/categories'
+import type { FoodCategory } from '@/types/Categories'
 import { useAdminCategories } from '@/hooks/useAdminCategories'
 import {
   CategoryDeleteDialog,

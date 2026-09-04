@@ -1,5 +1,5 @@
 import { Pencil, Trash2 } from 'lucide-react'
-import type { FoodCategory } from '@/types/categories'
+import type { FoodCategory } from '@/types/Categories'
 import { formatRestaurantCount, getCategoryIcon } from './categoryIcons'
 
 export interface CategoryCardProps {

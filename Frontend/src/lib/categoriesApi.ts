@@ -1,6 +1,6 @@
 import axios from 'axios'
 import api from '@/lib/api'
-import type { CategoryFormInput, CategoryIconKey, FoodCategory } from '@/types/categories'
+import type { CategoryFormInput, CategoryIconKey, FoodCategory } from '@/types/Categories'
 
 interface CategoryApiRecord {
   id: number

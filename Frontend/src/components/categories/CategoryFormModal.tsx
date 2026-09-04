@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
-import type { CategoryFormInput, CategoryIconKey, FoodCategory } from '@/types/categories'
+import type { CategoryFormInput, CategoryIconKey, FoodCategory } from '@/types/Categories'
 import { CategoryModal } from './CategoryModal'
 import { CATEGORY_ICON_OPTIONS } from './categoryIcons'
 

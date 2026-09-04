@@ -8,7 +8,7 @@ import {
   updateCategory,
 } from '@/lib/categoriesApi'
 import { fetchRestaurants } from '@/lib/restaurantsApi'
-import type { CategoryFormInput, FoodCategory } from '@/types/categories'
+import type { CategoryFormInput, FoodCategory } from '@/types/Categories'
 
 const QUERY_KEY = ['categories'] as const
 const LOCAL_KEY = 'admin-local-categories'

@@ -1,4 +1,4 @@
-import type { FoodCategory } from '@/types/categories'
+import type { FoodCategory } from '@/types/Categories'
 import { CategoryModal } from './CategoryModal'
 
 export interface CategoryDeleteDialogProps {

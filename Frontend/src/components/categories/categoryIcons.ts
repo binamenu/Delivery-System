@@ -10,7 +10,7 @@ import {
   Drumstick,
   UtensilsCrossed,
 } from 'lucide-react'
-import type { CategoryIconKey } from '@/types/categories'
+import type { CategoryIconKey } from '@/types/Categories'
 
 export interface CategoryIconOption {
   value: CategoryIconKey

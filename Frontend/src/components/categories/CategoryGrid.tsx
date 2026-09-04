@@ -1,5 +1,5 @@
 import { Skeleton } from '@/components/ui/skeleton'
-import type { FoodCategory } from '@/types/categories'
+import type { FoodCategory } from '@/types/Categories'
 import { CategoryCard } from './CategoryCard'
 
 export interface CategoryGridProps {
