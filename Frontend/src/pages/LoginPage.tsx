@@ -1,28 +1,36 @@
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
 import { useTranslation } from 'react-i18next'
+import { Eye, EyeOff } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth'
+import AuthBranding from '@/components/auth/AuthBranding'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 
 export default function LoginPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { login, isLoading } = useAuthStore()
+  const [showPassword, setShowPassword] = useState(false)
 
   const loginSchema = z.object({
-    login: z.string().min(1, t('auth.emailRequired')),
-    password: z.string().min(1, t('auth.passwordRequired')),
+    login: z.string().min(1, 'Email or username is required'),
+    password: z.string().min(1, 'Password is required'),
+    remember_me: z.boolean().optional(),
   })
 
   type LoginForm = z.infer<typeof loginSchema>
 
-  const { register, handleSubmit, formState: { errors } } = useForm<LoginForm>({
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
   })
 
@@ -38,51 +46,121 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-muted/40">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl">{t('auth.loginTitle')}</CardTitle>
-          <CardDescription>{t('auth.loginSubtitle')}</CardDescription>
-        </CardHeader>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="login">{t('auth.emailOrUsername')}</Label>
+    <div className="min-h-screen flex flex-col lg:flex-row w-full bg-[#f8f8f8]">
+      {/* Left Column: Branding Section */}
+      <AuthBranding />
+
+      {/* Right Column: Authentication Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 lg:p-16">
+        <div className="w-full max-w-[420px] space-y-6">
+          {/* Header */}
+          <div className="space-y-1.5 text-left">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
+              Welcome back
+            </h2>
+            <p className="text-gray-500 text-sm sm:text-base font-normal">
+              Sign in to your account to continue
+            </p>
+          </div>
+
+          {/* Form */}
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+            {/* Email Address field */}
+            <div className="space-y-1.5">
+              <Label htmlFor="login" className="text-xs sm:text-sm font-semibold text-gray-700">
+                Email or Username
+              </Label>
               <Input
                 id="login"
-                placeholder="john@example.com"
+                type="text"
+                placeholder="you@example.com"
+                aria-label="Email Address or Username"
+                className="h-11 rounded-full px-4 border-gray-200 focus:border-[#f05a24] focus:ring-[#f05a24] bg-white text-sm"
                 {...register('login')}
               />
               {errors.login && (
-                <p className="text-sm text-destructive">{errors.login.message}</p>
+                <p className="text-xs text-red-500 mt-1">{errors.login.message}</p>
               )}
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">{t('auth.password')}</Label>
+
+            {/* Password field */}
+            <div className="space-y-1.5">
+              <Label htmlFor="password" className="text-xs sm:text-sm font-semibold text-gray-700">
+                Password
+              </Label>
               <Input
                 id="password"
-                type="password"
-                placeholder="••••••••"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="Enter your password"
+                aria-label="Password"
+                className="h-11 rounded-full px-4 border-gray-200 focus:border-[#f05a24] focus:ring-[#f05a24] bg-white text-sm"
                 {...register('password')}
               />
+              {/* Show password toggle */}
+              <div className="flex items-center mt-1.5">
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 cursor-pointer select-none font-medium"
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-3.5 h-3.5" />
+                  ) : (
+                    <Eye className="w-3.5 h-3.5" />
+                  )}
+                  <span>Show password</span>
+                </button>
+              </div>
               {errors.password && (
-                <p className="text-sm text-destructive">{errors.password.message}</p>
+                <p className="text-xs text-red-500 mt-1">{errors.password.message}</p>
               )}
             </div>
-          </CardContent>
-          <CardFooter className="flex flex-col gap-4">
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? t('common.loading') : t('auth.loginButton')}
+
+            {/* Remember Me & Forgot Password */}
+            <div className="flex items-center justify-between pt-1">
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  id="remember_me"
+                  className="w-4 h-4 rounded border-gray-300 text-[#f05a24] focus:ring-[#f05a24] cursor-pointer"
+                  {...register('remember_me')}
+                />
+                <span className="text-xs sm:text-sm text-gray-600 font-normal">
+                  Remember me
+                </span>
+              </label>
+              <Link
+                to="#"
+                className="text-xs sm:text-sm font-semibold text-[#f05a24] hover:underline"
+              >
+                Forgot password?
+              </Link>
+            </div>
+
+            {/* Submit Button */}
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="w-full h-12 bg-[#f05a24] hover:bg-[#d84d1c] text-white font-semibold rounded-full text-base transition-all duration-200 shadow-md shadow-[#f05a24]/20 cursor-pointer"
+            >
+              {isLoading ? (t('common.loading') || 'Loading...') : 'Sign In'}
             </Button>
-            <p className="text-sm text-muted-foreground">
-              {t('auth.noAccount')}{' '}
-              <Link to="/register" className="text-primary underline-offset-4 hover:underline">
-                {t('auth.register')}
+          </form>
+
+          {/* Footer Link */}
+          <div className="text-center pt-2">
+            <p className="text-xs sm:text-sm text-gray-500 font-normal">
+              Don't have an account?{' '}
+              <Link
+                to="/register"
+                className="text-[#f05a24] font-semibold hover:underline"
+              >
+                Create one
               </Link>
             </p>
-          </CardFooter>
-        </form>
-      </Card>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

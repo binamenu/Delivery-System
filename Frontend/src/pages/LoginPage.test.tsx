@@ -25,8 +25,8 @@ describe('LoginPage', () => {
     )
 
     expect(screen.getByText('Welcome back')).toBeInTheDocument()
-    expect(screen.getByText('Sign in to your account')).toBeInTheDocument()
-    expect(screen.getByLabelText(/email or username/i)).toBeInTheDocument()
+    expect(screen.getByText(/sign in to your account/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/email/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/password/i)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument()
   })
@@ -39,7 +39,7 @@ describe('LoginPage', () => {
     )
 
     expect(screen.getByText(/don't have an account/i)).toBeInTheDocument()
-    expect(screen.getByText('Sign Up')).toHaveAttribute('href', '/register')
+    expect(screen.getByText('Create one')).toHaveAttribute('href', '/register')
   })
 
   it('validates required fields', async () => {
@@ -80,14 +80,16 @@ describe('LoginPage', () => {
       </MemoryRouter>
     )
 
-    await user.type(screen.getByLabelText(/email or username/i), 'john@example.com')
+    await user.type(screen.getByLabelText(/email/i), 'john@example.com')
     await user.type(screen.getByLabelText(/password/i), 'password123')
     await user.click(screen.getByRole('button', { name: /sign in/i }))
 
-    expect(mockLogin).toHaveBeenCalledWith({
-      login: 'john@example.com',
-      password: 'password123',
-    })
+    expect(mockLogin).toHaveBeenCalledWith(
+      expect.objectContaining({
+        login: 'john@example.com',
+        password: 'password123',
+      })
+    )
   })
 
   it('shows loading state', async () => {
