@@ -9,6 +9,7 @@ export interface RestaurantApplication {
   phone: string
   address: string
   appliedDate: string
+  role: 'restaurant_manager'
 }
 
 export interface ApplicationStats {

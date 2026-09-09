@@ -20,6 +20,7 @@ interface ApplicationApiRecord {
   manager?: string | { name?: string } | null
   manager_name?: string
   managerName?: string
+  role?: string
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -53,10 +54,11 @@ export function mapApplication(record: ApplicationApiRecord): RestaurantApplicat
     name: record.name,
     category: relationName(record.category) || record.description?.trim() || 'Uncategorized',
     status: normalizeStatus(record),
-   managerName: record.managerName ?? record.manager_name ?? (relationName(record.manager) || '-'),
+    managerName: record.managerName ?? record.manager_name ?? (relationName(record.manager) || '-'),
     phone: record.phone?.trim() || '—',
     address: record.address?.trim() || '—',
     appliedDate: record.applied_at ?? record.appliedDate ?? record.created_at ?? record.createdAt ?? '',
+    role: 'restaurant_manager',
   }
 }
 
@@ -99,6 +101,7 @@ export async function approveApplication(id: number): Promise<RestaurantApplicat
     phone: '—',
     address: '—',
     appliedDate: restaurant.createdAt,
+    role: 'restaurant_manager',
   }
 }
 
@@ -113,5 +116,6 @@ export async function rejectApplication(id: number): Promise<RestaurantApplicati
     phone: '—',
     address: '—',
     appliedDate: restaurant.createdAt,
+    role: 'restaurant_manager',
   }
 }
