@@ -100,7 +100,7 @@ export function useAdminSettings() {
       toast.error('New password is required.')
       return
     }
-
+    
     if (password.newPassword.length < 8) {
       toast.error('New password must be at least 8 characters.')
       return
@@ -125,17 +125,14 @@ export function useAdminSettings() {
   }
 
   const saveAll = async () => {
-    // Validate profile fields
     if (!profile.name?.trim()) {
       toast.warning('Name is required.')
       return
     }
-    
     if (!profile.email?.trim()) {
       toast.warning('Email is required.')
       return
     }
-
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(profile.email)) {
       toast.warning('Please enter a valid email address.')
@@ -143,34 +140,51 @@ export function useAdminSettings() {
     }
 
     setIsSaving(true)
+    let profileUpdated = false
+    let settingsUpdated = false
+    
     try {
-
       try {
         await updateAdminProfile(profile)
         await getProfile().catch(() => {})
+        profileUpdated = true
       } catch (profileError) {
-      
-        toast.warning('Profile update failed, but continuing with other settings.')
+        toast.warning('Profile update failed. Please check your information and try again.')
         console.error('Profile update error:', profileError)
+        setIsSaving(false)
+        return
       }
 
-      await saveAllSettings({
-        profile,
-        settings
-      })
+      try {
+        await saveAllSettings({
+          profile,
+          settings
+        })
+        settingsUpdated = true
+      } catch (settingsError) {
+        toast.error('Settings update failed. Please try again.')
+        console.error('Settings update error:', settingsError)
+        setIsSaving(false)
+        return
+      }
       
       await i18n.changeLanguage(settings.language)
       
-      toast.success('All settings saved successfully.')
+      if (profileUpdated && settingsUpdated) {
+        toast.success('All settings saved successfully.')
+      } else if (profileUpdated && !settingsUpdated) {
+        toast.warning('Profile updated but settings failed to save.')
+      } else if (!profileUpdated && settingsUpdated) {
+        toast.warning('Settings updated but profile failed to save.')
+      }
     } catch (error) {
-      toast.error(getErrorMessage(error))
+      toast.error('An unexpected error occurred while saving.')
       console.error('Save all error:', error)
     } finally {
       setIsSaving(false)
     }
   }
 
-  // Handle 2FA toggle with API call
   const toggleTwoFactor = async () => {
     const newValue = !settings.privacy.twoFactorEnabled
     try {
@@ -186,7 +200,6 @@ export function useAdminSettings() {
     }
   }
 
-  // Handle session timeout change with API call
   const updateSessionTimeoutValue = async (minutes: SessionTimeout) => {
     try {
       await updateSessionTimeout(minutes)
@@ -201,7 +214,6 @@ export function useAdminSettings() {
     }
   }
 
-  // Handle system control changes with API call
   const updateSystemControl = async (
     key: keyof AdminSettingsState['system'],
     value: boolean
@@ -220,7 +232,6 @@ export function useAdminSettings() {
     }
   }
 
-  // Handle platform settings update with API call
   const updatePlatform = async (platformData: AdminSettingsState['platform']) => {
     try {
       const result = await updatePlatformSettings(platformData)
@@ -232,7 +243,6 @@ export function useAdminSettings() {
     }
   }
 
-  // Handle notification settings update with API call
   const updateNotifications = async (notificationsData: AdminSettingsState['notifications']) => {
     try {
       const result = await updateNotificationSettings(notificationsData)
@@ -244,7 +254,6 @@ export function useAdminSettings() {
     }
   }
 
-  // Handle privacy settings update with API call
   const updatePrivacy = async (privacyData: AdminSettingsState['privacy']) => {
     try {
       const result = await updatePrivacySettings(privacyData)
@@ -256,7 +265,6 @@ export function useAdminSettings() {
     }
   }
 
-  // Handle language update with API call
   const updateLanguageValue = async (language: AdminLanguage) => {
     try {
       await updateLanguage(language)
@@ -269,10 +277,9 @@ export function useAdminSettings() {
     }
   }
 
-  // Handle logout with cache clearing
   const handleLogout = async () => {
     try {
-      clearSettingsCache() 
+      clearSettingsCache()
       await logout()
       navigate('/login')
       toast.success('Logged out successfully.')
@@ -297,7 +304,6 @@ export function useAdminSettings() {
     savePassword,
     saveAll,
     handleLogout,
-    // New functions for individual updates
     toggleTwoFactor,
     updateSessionTimeout: updateSessionTimeoutValue,
     updateSystemControl,

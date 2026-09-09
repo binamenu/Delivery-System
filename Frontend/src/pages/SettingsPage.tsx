@@ -74,11 +74,10 @@ export default function SettingsPage() {
   const handleSystemControlChange = (key: string, value: boolean) => {
     const destructiveActions = ['maintenanceMode', 'allowRestaurantRegistrations', 'allowUserRegistrations']
     
-    if (destructiveActions.includes(key) && value === false) {
-      
+    if (destructiveActions.includes(key) && value === true) {
       let message = ''
       if (key === 'maintenanceMode') {
-        message = 'Are you sure you want to enable maintenance mode? This will block all user access to the platform.'
+        message = 'Are you sure you want to enable maintenance mode? This will block all user access to the platform. Users will not be able to place orders or access their accounts.'
       } else if (key === 'allowRestaurantRegistrations') {
         message = 'Are you sure you want to disable restaurant registrations? New restaurants will not be able to register.'
       } else if (key === 'allowUserRegistrations') {
@@ -91,7 +90,6 @@ export default function SettingsPage() {
         message,
       })
     } else {
-
       updateSystemControl(key as keyof typeof settings.system, value)
     }
   }
@@ -113,7 +111,6 @@ export default function SettingsPage() {
   }
 
   const handleSaveAll = async () => {
-    
     if (!profile.name || !profile.name.trim()) {
       toast.warning('Name and email are required fields')
       return
@@ -152,7 +149,6 @@ export default function SettingsPage() {
     <div className="space-y-6 pb-8">
       <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
 
-      {/* Account & Profile Section */}
       <SettingsCard title="Account & Profile">
         <div className="mb-6 flex items-center gap-4">
           <div className="relative">
@@ -194,7 +190,6 @@ export default function SettingsPage() {
         </div>
       </SettingsCard>
 
-      {/* Security Section */}
       <SettingsCard title="Security — Change Password">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <SettingsPasswordField
@@ -231,7 +226,6 @@ export default function SettingsPage() {
         </div>
       </SettingsCard>
 
-      {/* Platform Settings */}
       <SettingsCard title="Platform Settings">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <SettingsField
@@ -301,7 +295,6 @@ export default function SettingsPage() {
         </div>
       </SettingsCard>
 
-      {/* Notification Settings */}
       <SettingsCard title="Notification Settings">
         <SettingsToggle
           title="New restaurant registration"
@@ -362,7 +355,6 @@ export default function SettingsPage() {
         />
       </SettingsCard>
 
-      {/* Appearance */}
       <SettingsCard title="Appearance">
         <div className="space-y-5">
           <SettingsThemeSelector value={theme} onChange={setTheme} />
@@ -380,10 +372,8 @@ export default function SettingsPage() {
         </div>
       </SettingsCard>
 
-      {/* Privacy & Security - Updated with editable session timeout and fixed 2FA */}
       <SettingsCard title="Privacy & Security">
         <div className="space-y-4">
-          {/* Session Timeout - Now editable with dropdown */}
           <div className="flex flex-col space-y-2 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
             <div>
               <p className="font-medium text-gray-900">Session timeout</p>
@@ -404,7 +394,6 @@ export default function SettingsPage() {
             </select>
           </div>
 
-          {/* Two-factor authentication - Now calls API */}
           <div className="flex flex-col space-y-2 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
             <div>
               <p className="font-medium text-gray-900">Two-factor authentication</p>
@@ -439,7 +428,6 @@ export default function SettingsPage() {
         </div>
       </SettingsCard>
 
-      {/* System Controls - Updated with confirmation */}
       <SettingsCard title="System Controls">
         <SettingsAlertBanner message="Changes to system controls affect the entire platform immediately. Use with caution." />
         <SettingsToggle
@@ -469,7 +457,6 @@ export default function SettingsPage() {
         />
       </SettingsCard>
 
-      {/* Action Buttons */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <button
           type="button"
@@ -488,7 +475,6 @@ export default function SettingsPage() {
         </button>
       </div>
 
-      {/* Confirmation Modal */}
       {confirmAction && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">

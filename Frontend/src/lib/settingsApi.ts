@@ -1,7 +1,7 @@
 import api from '@/lib/api'
-import type { 
-  AdminPasswordForm, 
-  AdminProfileForm, 
+import type {
+  AdminPasswordForm,
+  AdminProfileForm,
   AdminSettingsState,
   AdminPlatformSettings,
   AdminNotificationSettings,
@@ -9,14 +9,12 @@ import type {
   AdminSystemControls,
   AdminLanguage,
 } from '@/types/Settings'
-import { toast } from 'sonner'
 
 const handleApiError = (error: any): string => {
   if (error.response?.data?.message) {
     return error.response.data.message
   }
   if (error.response?.data?.errors) {
-    
     const errors = error.response.data.errors
     if (Array.isArray(errors)) {
       return errors.map((e: any) => e.message || e).join(', ')
@@ -28,72 +26,46 @@ const handleApiError = (error: any): string => {
   }
   return 'An unexpected error occurred'
 }
+
 export async function updateAdminPassword(form: AdminPasswordForm) {
-
   if (form.newPassword !== form.confirmPassword) {
-    const error = new Error('New password and confirm password do not match')
-    toast.warning(error.message)
-    throw error
+    throw new Error('New password and confirm password do not match')
   }
-
   if (form.newPassword.length < 8) {
-    const error = new Error('Password must be at least 8 characters long')
-    toast.warning(error.message)
-    throw error
+    throw new Error('Password must be at least 8 characters long')
   }
-
   try {
     const response = await api.put('/change-password', {
       currentPassword: form.currentPassword,
       password: form.newPassword,
       passwordConfirmation: form.confirmPassword,
     })
-    
-    toast.success('Password updated successfully')
     return response.data
   } catch (error: any) {
-    const errorMessage = handleApiError(error)
-    toast.error(errorMessage)
-    console.error('Password update error:', error)
-    throw error
+    throw new Error(handleApiError(error))
   }
 }
 
 export async function updateAdminProfile(form: AdminProfileForm) {
-
   if (!form.name || !form.name.trim()) {
-    const error = new Error('Name is required')
-    toast.warning(error.message)
-    throw error
+    throw new Error('Name is required')
   }
-
   if (!form.email || !form.email.trim()) {
-    const error = new Error('Email is required')
-    toast.warning(error.message)
-    throw error
+    throw new Error('Email is required')
   }
-
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   if (!emailRegex.test(form.email)) {
-    const error = new Error('Please enter a valid email address')
-    toast.warning(error.message)
-    throw error
+    throw new Error('Please enter a valid email address')
   }
-
   try {
     const response = await api.put('/profile', {
       name: form.name.trim(),
       email: form.email.trim(),
-      phone: form.phone ? form.phone.trim() : '', // Include phone even if empty
+      phone: form.phone ? form.phone.trim() : '',
     })
-    
-    toast.success('Profile updated successfully')
     return response.data
   } catch (error: any) {
-    const errorMessage = handleApiError(error)
-    toast.error(errorMessage)
-    console.error('Profile update error:', error)
-    throw error
+    throw new Error(handleApiError(error))
   }
 }
 
@@ -102,14 +74,9 @@ export async function updateTwoFactorStatus(enabled: boolean) {
     const response = await api.put('/settings/2fa', {
       enabled,
     })
-    
-    toast.success(`2FA ${enabled ? 'enabled' : 'disabled'} successfully`)
     return response.data
   } catch (error: any) {
-    const errorMessage = handleApiError(error)
-    toast.error(`Failed to update 2FA: ${errorMessage}`)
-    console.error('2FA update error:', error)
-    throw error
+    throw new Error(handleApiError(error))
   }
 }
 
@@ -118,14 +85,9 @@ export async function updateSessionTimeout(minutes: number) {
     const response = await api.put('/settings/session-timeout', {
       sessionTimeoutMinutes: minutes,
     })
-    
-    toast.success(`Session timeout set to ${minutes} minutes`)
     return response.data
   } catch (error: any) {
-    const errorMessage = handleApiError(error)
-    toast.error(`Failed to update session timeout: ${errorMessage}`)
-    console.error('Session timeout update error:', error)
-    throw error
+    throw new Error(handleApiError(error))
   }
 }
 
@@ -135,14 +97,9 @@ export async function updatePrivacySettings(privacy: AdminPrivacySettings) {
       sessionTimeoutMinutes: privacy.sessionTimeoutMinutes,
       twoFactorEnabled: privacy.twoFactorEnabled,
     })
-    
-    toast.success('Privacy settings updated successfully')
     return response.data
   } catch (error: any) {
-    const errorMessage = handleApiError(error)
-    toast.error(`Failed to update privacy settings: ${errorMessage}`)
-    console.error('Privacy settings update error:', error)
-    throw error
+    throw new Error(handleApiError(error))
   }
 }
 
@@ -156,14 +113,9 @@ export async function updatePlatformSettings(platform: AdminPlatformSettings) {
       defaultDeliveryFee: platform.defaultDeliveryFee,
       minimumOrderAmount: platform.minimumOrderAmount,
     })
-    
-    toast.success('Platform settings updated successfully')
     return response.data
   } catch (error: any) {
-    const errorMessage = handleApiError(error)
-    toast.error(`Failed to update platform settings: ${errorMessage}`)
-    console.error('Platform settings update error:', error)
-    throw error
+    throw new Error(handleApiError(error))
   }
 }
 
@@ -177,14 +129,9 @@ export async function updateNotificationSettings(notifications: AdminNotificatio
       systemAlerts: notifications.systemAlerts,
       dailyPlatformSummary: notifications.dailyPlatformSummary,
     })
-    
-    toast.success('Notification settings updated successfully')
     return response.data
   } catch (error: any) {
-    const errorMessage = handleApiError(error)
-    toast.error(`Failed to update notification settings: ${errorMessage}`)
-    console.error('Notification settings update error:', error)
-    throw error
+    throw new Error(handleApiError(error))
   }
 }
 
@@ -195,14 +142,9 @@ export async function updateSystemControls(system: AdminSystemControls) {
       allowUserRegistrations: system.allowUserRegistrations,
       maintenanceMode: system.maintenanceMode,
     })
-    
-    toast.success('System controls updated successfully')
     return response.data
   } catch (error: any) {
-    const errorMessage = handleApiError(error)
-    toast.error(`Failed to update system controls: ${errorMessage}`)
-    console.error('System controls update error:', error)
-    throw error
+    throw new Error(handleApiError(error))
   }
 }
 
@@ -211,14 +153,9 @@ export async function updateLanguage(language: AdminLanguage) {
     const response = await api.put('/settings/language', {
       language,
     })
-    
-    toast.success('Language updated successfully')
     return response.data
   } catch (error: any) {
-    const errorMessage = handleApiError(error)
-    toast.error(`Failed to update language: ${errorMessage}`)
-    console.error('Language update error:', error)
-    throw error
+    throw new Error(handleApiError(error))
   }
 }
 
@@ -227,10 +164,7 @@ export async function fetchSettings(): Promise<AdminSettingsState> {
     const response = await api.get('/settings')
     return response.data
   } catch (error: any) {
-    const errorMessage = handleApiError(error)
-    toast.error(`Failed to fetch settings: ${errorMessage}`)
-    console.error('Fetch settings error:', error)
-    throw error
+    throw new Error(handleApiError(error))
   }
 }
 
@@ -238,18 +172,14 @@ export async function saveAllSettings(data: {
   profile: AdminProfileForm
   settings: AdminSettingsState
 }) {
-  try {
-    if (!data.profile.name || !data.profile.name.trim()) {
-      const error = new Error('Name is required')
-      toast.warning(error.message)
-      throw error
-    }
-    if (!data.profile.email || !data.profile.email.trim()) {
-      const error = new Error('Email is required')
-      toast.warning(error.message)
-      throw error
-    }
+  if (!data.profile.name || !data.profile.name.trim()) {
+    throw new Error('Name is required')
+  }
+  if (!data.profile.email || !data.profile.email.trim()) {
+    throw new Error('Email is required')
+  }
 
+  try {
     const response = await api.put('/settings/all', {
       profile: {
         name: data.profile.name.trim(),
@@ -285,13 +215,8 @@ export async function saveAllSettings(data: {
         language: data.settings.language,
       },
     })
-    
-    toast.success('All settings saved successfully')
     return response.data
   } catch (error: any) {
-    const errorMessage = handleApiError(error)
-    toast.error(`Failed to save settings: ${errorMessage}`)
-    console.error('Save all settings error:', error)
-    throw error
+    throw new Error(handleApiError(error))
   }
 }
