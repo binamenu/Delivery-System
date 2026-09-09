@@ -1,47 +1,10 @@
-import { toast } from 'sonner'
-import { useState } from 'react'
-import { useAdminSettings } from '@/hooks/useAdminSettings'
-import type { AdminCurrency, AdminLanguage, SessionTimeout } from '@/types/Settings'
-import {
-  SettingsAlertBanner,
-  SettingsCard,
-  SettingsField,
-  SettingsLinkRow,
-  SettingsPasswordField,
-  SettingsSelect,
-  SettingsThemeSelector,
-  SettingsToggle,
-} from '@/components/settings'
 
-const ROLE_LABELS: Record<string, string> = {
-  admin: 'Administrator',
-  manager: 'Restaurant Manager',
-  restaurant_manager: 'Restaurant Manager',
-  driver: 'Driver',
-  customer: 'Customer',
-}
-
-const CURRENCY_OPTIONS = [
-  { value: 'ETB', label: 'ETB' },
-  { value: 'USD', label: 'USD' },
-  { value: 'EUR', label: 'EUR' },
-]
-
-const LANGUAGE_OPTIONS = [
-  { value: 'en', label: 'English' },
-  { value: 'am', label: 'Amharic' },
-]
-
-const SESSION_TIMEOUT_OPTIONS = [
-  { value: '15', label: '15 minutes' },
-  { value: '30', label: '30 minutes' },
-  { value: '45', label: '45 minutes' },
-  { value: '60', label: '60 minutes' },
-  { value: '90', label: '90 minutes' },
-  { value: '120', label: '120 minutes' },
-]
 
 export default function SettingsPage() {
+<<<<<<< HEAD
+  return (
+    <div>SettingsPage</div>
+=======
   const {
     user,
     theme,
@@ -72,14 +35,9 @@ export default function SettingsPage() {
   const roleLabel = ROLE_LABELS[user?.role ?? ''] ?? user?.role ?? 'Administrator'
 
   const handleSystemControlChange = (key: string, value: boolean) => {
-    const confirmOnTrue = ['maintenanceMode']
-    const confirmOnFalse = ['allowRestaurantRegistrations', 'allowUserRegistrations']
+    const destructiveActions = ['maintenanceMode', 'allowRestaurantRegistrations', 'allowUserRegistrations']
     
-    const shouldConfirm = 
-      (confirmOnTrue.includes(key) && value === true) ||
-      (confirmOnFalse.includes(key) && value === false)
-    
-    if (shouldConfirm) {
+    if (destructiveActions.includes(key) && value === true) {
       let message = ''
       if (key === 'maintenanceMode') {
         message = 'Are you sure you want to enable maintenance mode? This will block all user access to the platform. Users will not be able to place orders or access their accounts.'
@@ -503,5 +461,6 @@ export default function SettingsPage() {
         </div>
       )}
     </div>
+>>>>>>> 073806b (fix: resolve all review issues - remove double toasts, fix maintenance mode confirmation, qualify success messages)
   )
 }
