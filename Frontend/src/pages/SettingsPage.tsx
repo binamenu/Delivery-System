@@ -1,6 +1,7 @@
 import { toast } from 'sonner'
+import { useState } from 'react'
 import { useAdminSettings } from '@/hooks/useAdminSettings'
-import type { AdminCurrency, AdminLanguage } from '@/types/Settings'
+import type { AdminCurrency, AdminLanguage, SessionTimeout } from '@/types/Settings'
 import {
   SettingsAlertBanner,
   SettingsCard,
@@ -31,6 +32,15 @@ const LANGUAGE_OPTIONS = [
   { value: 'am', label: 'Amharic' },
 ]
 
+const SESSION_TIMEOUT_OPTIONS = [
+  { value: '15', label: '15 minutes' },
+  { value: '30', label: '30 minutes' },
+  { value: '45', label: '45 minutes' },
+  { value: '60', label: '60 minutes' },
+  { value: '90', label: '90 minutes' },
+  { value: '120', label: '120 minutes' },
+]
+
 export default function SettingsPage() {
   const {
     user,
@@ -47,15 +57,102 @@ export default function SettingsPage() {
     savePassword,
     saveAll,
     handleLogout,
+    toggleTwoFactor,
+    updateSessionTimeout,
+    updateSystemControl,
   } = useAdminSettings()
+
+  const [confirmAction, setConfirmAction] = useState<{
+    key: string
+    value: boolean
+    message: string
+  } | null>(null)
 
   const initial = (profile.name || user?.name || 'A').trim().charAt(0).toUpperCase()
   const roleLabel = ROLE_LABELS[user?.role ?? ''] ?? user?.role ?? 'Administrator'
+
+  const handleSystemControlChange = (key: string, value: boolean) => {
+    const destructiveActions = ['maintenanceMode', 'allowRestaurantRegistrations', 'allowUserRegistrations']
+    
+    if (destructiveActions.includes(key) && value === false) {
+      
+      let message = ''
+      if (key === 'maintenanceMode') {
+        message = 'Are you sure you want to enable maintenance mode? This will block all user access to the platform.'
+      } else if (key === 'allowRestaurantRegistrations') {
+        message = 'Are you sure you want to disable restaurant registrations? New restaurants will not be able to register.'
+      } else if (key === 'allowUserRegistrations') {
+        message = 'Are you sure you want to disable user registrations? New users will not be able to create accounts.'
+      }
+      
+      setConfirmAction({
+        key,
+        value,
+        message,
+      })
+    } else {
+
+      updateSystemControl(key as keyof typeof settings.system, value)
+    }
+  }
+
+  const handleConfirmAction = () => {
+    if (confirmAction) {
+      updateSystemControl(confirmAction.key as keyof typeof settings.system, confirmAction.value)
+      setConfirmAction(null)
+    }
+  }
+
+  const handleSessionTimeoutChange = (value: string) => {
+    const timeout = Number(value) as SessionTimeout
+    updateSessionTimeout(timeout)
+  }
+
+  const handle2FAToggle = () => {
+    toggleTwoFactor()
+  }
+
+  const handleSaveAll = async () => {
+    
+    if (!profile.name || !profile.name.trim()) {
+      toast.warning('Name and email are required fields')
+      return
+    }
+    if (!profile.email || !profile.email.trim()) {
+      toast.warning('Name and email are required fields')
+      return
+    }
+
+    try {
+      await saveAll()
+    } catch (error) {
+      console.error('Save error:', error)
+    }
+  }
+
+  const handleSavePassword = async () => {
+    if (password.newPassword !== password.confirmPassword) {
+      toast.warning('New password and confirm password do not match')
+      return
+    }
+
+    if (password.newPassword && password.newPassword.length < 8) {
+      toast.warning('Password must be at least 8 characters long')
+      return
+    }
+
+    try {
+      await savePassword()
+    } catch (error) {
+      console.error('Password save error:', error)
+    }
+  }
 
   return (
     <div className="space-y-6 pb-8">
       <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
 
+      {/* Account & Profile Section */}
       <SettingsCard title="Account & Profile">
         <div className="mb-6 flex items-center gap-4">
           <div className="relative">
@@ -75,13 +172,13 @@ export default function SettingsPage() {
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <SettingsField
-            label="Full Name"
+            label="Full Name *"
             name="name"
             value={profile.name}
             onChange={(event) => setProfile({ ...profile, name: event.target.value })}
           />
           <SettingsField
-            label="Email Address"
+            label="Email Address *"
             name="email"
             type="email"
             value={profile.email}
@@ -97,6 +194,7 @@ export default function SettingsPage() {
         </div>
       </SettingsCard>
 
+      {/* Security Section */}
       <SettingsCard title="Security — Change Password">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <SettingsPasswordField
@@ -125,7 +223,7 @@ export default function SettingsPage() {
           <button
             type="button"
             disabled={isSavingPassword}
-            onClick={() => void savePassword()}
+            onClick={() => void handleSavePassword()}
             className="rounded-full bg-orange-500 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-orange-600 disabled:opacity-50"
           >
             {isSavingPassword ? 'Saving...' : 'Save Password'}
@@ -133,6 +231,7 @@ export default function SettingsPage() {
         </div>
       </SettingsCard>
 
+      {/* Platform Settings */}
       <SettingsCard title="Platform Settings">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <SettingsField
@@ -202,6 +301,7 @@ export default function SettingsPage() {
         </div>
       </SettingsCard>
 
+      {/* Notification Settings */}
       <SettingsCard title="Notification Settings">
         <SettingsToggle
           title="New restaurant registration"
@@ -262,6 +362,7 @@ export default function SettingsPage() {
         />
       </SettingsCard>
 
+      {/* Appearance */}
       <SettingsCard title="Appearance">
         <div className="space-y-5">
           <SettingsThemeSelector value={theme} onChange={setTheme} />
@@ -279,35 +380,66 @@ export default function SettingsPage() {
         </div>
       </SettingsCard>
 
+      {/* Privacy & Security - Updated with editable session timeout and fixed 2FA */}
       <SettingsCard title="Privacy & Security">
-        <SettingsLinkRow
-          label="Session timeout"
-          value={`${settings.privacy.sessionTimeoutMinutes} minutes of inactivity`}
-        />
-        <SettingsLinkRow
-          label="Two-factor authentication"
-          value={settings.privacy.twoFactorEnabled ? 'Enabled' : 'Disabled'}
-          onClick={() =>
-            updateSettings('privacy', {
-              ...settings.privacy,
-              twoFactorEnabled: !settings.privacy.twoFactorEnabled,
-            })
-          }
-        />
-        <SettingsLinkRow
-          label="Privacy Policy"
-          onClick={() => toast.info('Privacy policy will open when the document is available.')}
-        />
-        <SettingsLinkRow
-          label="Terms and Conditions"
-          onClick={() => toast.info('Terms and conditions will open when the document is available.')}
-        />
-        <SettingsLinkRow
-          label="Account Security Settings"
-          onClick={() => toast.info('Use the password section above to update account security.')}
-        />
+        <div className="space-y-4">
+          {/* Session Timeout - Now editable with dropdown */}
+          <div className="flex flex-col space-y-2 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
+            <div>
+              <p className="font-medium text-gray-900">Session timeout</p>
+              <p className="text-sm text-gray-500">
+                Session will expire after this period of inactivity
+              </p>
+            </div>
+            <select
+              value={settings.privacy.sessionTimeoutMinutes}
+              onChange={(e) => handleSessionTimeoutChange(e.target.value)}
+              className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500"
+            >
+              {SESSION_TIMEOUT_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Two-factor authentication - Now calls API */}
+          <div className="flex flex-col space-y-2 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
+            <div>
+              <p className="font-medium text-gray-900">Two-factor authentication</p>
+              <p className="text-sm text-gray-500">
+                Add an extra layer of security to your account
+              </p>
+            </div>
+            <button
+              onClick={() => void handle2FAToggle()}
+              className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+                settings.privacy.twoFactorEnabled
+                  ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              {settings.privacy.twoFactorEnabled ? 'Enabled' : 'Disabled'}
+            </button>
+          </div>
+
+          <SettingsLinkRow
+            label="Privacy Policy"
+            onClick={() => toast.info('Privacy policy will open when the document is available.')}
+          />
+          <SettingsLinkRow
+            label="Terms and Conditions"
+            onClick={() => toast.info('Terms and conditions will open when the document is available.')}
+          />
+          <SettingsLinkRow
+            label="Account Security Settings"
+            onClick={() => toast.info('Use the password section above to update account security.')}
+          />
+        </div>
       </SettingsCard>
 
+      {/* System Controls - Updated with confirmation */}
       <SettingsCard title="System Controls">
         <SettingsAlertBanner message="Changes to system controls affect the entire platform immediately. Use with caution." />
         <SettingsToggle
@@ -315,7 +447,7 @@ export default function SettingsPage() {
           description="When off, the registration form is hidden from new restaurant managers."
           checked={settings.system.allowRestaurantRegistrations}
           onChange={(checked) =>
-            updateSettings('system', { ...settings.system, allowRestaurantRegistrations: checked })
+            handleSystemControlChange('allowRestaurantRegistrations', checked)
           }
         />
         <SettingsToggle
@@ -323,7 +455,7 @@ export default function SettingsPage() {
           description="When off, new customers and drivers cannot create accounts."
           checked={settings.system.allowUserRegistrations}
           onChange={(checked) =>
-            updateSettings('system', { ...settings.system, allowUserRegistrations: checked })
+            handleSystemControlChange('allowUserRegistrations', checked)
           }
         />
         <SettingsToggle
@@ -332,11 +464,12 @@ export default function SettingsPage() {
           description="Platform shows maintenance page to all non-admin users."
           checked={settings.system.maintenanceMode}
           onChange={(checked) =>
-            updateSettings('system', { ...settings.system, maintenanceMode: checked })
+            handleSystemControlChange('maintenanceMode', checked)
           }
         />
       </SettingsCard>
 
+      {/* Action Buttons */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <button
           type="button"
@@ -348,12 +481,36 @@ export default function SettingsPage() {
         <button
           type="button"
           disabled={isSaving}
-          onClick={() => void saveAll()}
+          onClick={() => void handleSaveAll()}
           className="rounded-full bg-orange-500 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-orange-600 disabled:opacity-50"
         >
           {isSaving ? 'Saving...' : 'Save All Changes'}
         </button>
       </div>
+
+      {/* Confirmation Modal */}
+      {confirmAction && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Confirm Destructive Action</h2>
+            <p className="text-gray-600 mb-6">{confirmAction.message}</p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setConfirmAction(null)}
+                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmAction}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

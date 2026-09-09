@@ -1,6 +1,8 @@
+
 export type AdminThemePreference = 'light' | 'dark' | 'system'
 export type AdminLanguage = 'en' | 'am'
 export type AdminCurrency = 'ETB' | 'USD' | 'EUR'
+export type SessionTimeout = 15 | 30 | 45 | 60 | 90 | 120
 
 export interface AdminProfileForm {
   name: string
@@ -33,7 +35,7 @@ export interface AdminNotificationSettings {
 }
 
 export interface AdminPrivacySettings {
-  sessionTimeoutMinutes: 15 | 30 | 60
+  sessionTimeoutMinutes: SessionTimeout
   twoFactorEnabled: boolean
 }
 
@@ -78,4 +80,25 @@ export const DEFAULT_ADMIN_SETTINGS: AdminSettingsState = {
     maintenanceMode: false,
   },
   language: 'en',
+}
+export interface ApiResponse<T = any> {
+  success: boolean
+  data?: T
+  message?: string
+  error?: string
+}
+
+// Helper type for settings validation errors
+export interface ValidationError {
+  field: string
+  message: string
+}
+
+// Helper type for settings sections
+export type SettingsSection = keyof AdminSettingsState
+
+// Helper type for settings update payload
+export type SettingsUpdatePayload<T extends SettingsSection> = {
+  section: T
+  data: AdminSettingsState[T]
 }
