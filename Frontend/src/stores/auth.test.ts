@@ -2,14 +2,21 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 import { useAuthStore } from './auth'
 
-// Mock localStorage
+// Mock localStorage and sessionStorage
 const localStorageMock = {
   getItem: vi.fn(),
   setItem: vi.fn(),
   removeItem: vi.fn(),
   clear: vi.fn(),
 }
+const sessionStorageMock = {
+  getItem: vi.fn(),
+  setItem: vi.fn(),
+  removeItem: vi.fn(),
+  clear: vi.fn(),
+}
 Object.defineProperty(window, 'localStorage', { value: localStorageMock })
+Object.defineProperty(window, 'sessionStorage', { value: sessionStorageMock })
 
 // Mock the API
 vi.mock('@/lib/api', () => ({
@@ -25,6 +32,7 @@ describe('Auth Store', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     localStorageMock.getItem.mockReturnValue(null)
+    sessionStorageMock.getItem.mockReturnValue(null)
     // Reset store state
     useAuthStore.setState({
       user: null,
@@ -42,20 +50,34 @@ describe('Auth Store', () => {
     expect(result.current.isLoading).toBe(false)
   })
 
-  it('sets token', () => {
+  it('sets token in localStorage when remember is true', () => {
     const { result } = renderHook(() => useAuthStore())
 
     act(() => {
-      result.current.setToken('test-token')
+      result.current.setToken('test-token', true)
     })
 
     expect(result.current.token).toBe('test-token')
     expect(result.current.isAuthenticated).toBe(true)
     expect(localStorageMock.setItem).toHaveBeenCalledWith('token', 'test-token')
+    expect(sessionStorageMock.removeItem).toHaveBeenCalledWith('token')
   })
 
-  it('logs in user', async () => {
-    const mockUser = { id: 1, name: 'John', email: 'john@example.com', username: 'john', email_verified_at: null, phone: '0912345678', role: 'customer', status: 'active', created_at: '2026-01-01', updated_at: '2026-01-01' }
+  it('sets token in sessionStorage when remember is false', () => {
+    const { result } = renderHook(() => useAuthStore())
+
+    act(() => {
+      result.current.setToken('test-token', false)
+    })
+
+    expect(result.current.token).toBe('test-token')
+    expect(result.current.isAuthenticated).toBe(true)
+    expect(sessionStorageMock.setItem).toHaveBeenCalledWith('token', 'test-token')
+    expect(localStorageMock.removeItem).toHaveBeenCalledWith('token')
+  })
+
+  it('logs in user with remember_me: true to localStorage', async () => {
+    const mockUser = { id: 1, name: 'John', email: 'john@example.com', username: 'john', email_verified_at: null, phone: '0912345678', role: 'customer' as const, status: 'active', created_at: '2026-01-01', updated_at: '2026-01-01' }
     vi.mocked(api.post).mockResolvedValue({
       data: {
         user: mockUser,
@@ -66,15 +88,65 @@ describe('Auth Store', () => {
     const { result } = renderHook(() => useAuthStore())
 
     await act(async () => {
-      await result.current.login({ login: 'john@example.com', password: 'password' })
+      await result.current.login({ login: 'john@example.com', password: 'password', remember_me: true })
     })
 
     expect(result.current.user).toEqual(mockUser)
     expect(result.current.isAuthenticated).toBe(true)
     expect(localStorageMock.setItem).toHaveBeenCalledWith('token', 'token-123')
+    expect(sessionStorageMock.removeItem).toHaveBeenCalledWith('token')
   })
 
-  it('logs out user', async () => {
+  it('logs in user with remember_me: false to sessionStorage', async () => {
+    const mockUser = { id: 1, name: 'John', email: 'john@example.com', username: 'john', email_verified_at: null, phone: '0912345678', role: 'customer' as const, status: 'active', created_at: '2026-01-01', updated_at: '2026-01-01' }
+    vi.mocked(api.post).mockResolvedValue({
+      data: {
+        user: mockUser,
+        access_token: 'token-456',
+      },
+    })
+
+    const { result } = renderHook(() => useAuthStore())
+
+    await act(async () => {
+      await result.current.login({ login: 'john@example.com', password: 'password', remember_me: false })
+    })
+
+    expect(result.current.user).toEqual(mockUser)
+    expect(result.current.isAuthenticated).toBe(true)
+    expect(sessionStorageMock.setItem).toHaveBeenCalledWith('token', 'token-456')
+    expect(localStorageMock.removeItem).toHaveBeenCalledWith('token')
+  })
+
+  it('registers user and stores token in sessionStorage by default', async () => {
+    const mockUser = { id: 2, name: 'Jane', email: 'jane@example.com', username: 'jane', email_verified_at: null, phone: '0912345678', role: 'customer' as const, status: 'active', created_at: '2026-01-01', updated_at: '2026-01-01' }
+    vi.mocked(api.post).mockResolvedValue({
+      data: {
+        user: mockUser,
+        access_token: 'token-reg-123',
+      },
+    })
+
+    const { result } = renderHook(() => useAuthStore())
+
+    await act(async () => {
+      await result.current.register({
+        name: 'Jane',
+        email: 'jane@example.com',
+        username: 'jane',
+        phone: '0912345678',
+        password: 'password123',
+        password_confirmation: 'password123',
+      })
+    })
+
+    expect(result.current.user).toEqual(mockUser)
+    expect(result.current.isAuthenticated).toBe(true)
+    expect(sessionStorageMock.setItem).toHaveBeenCalledWith('token', 'token-reg-123')
+    expect(localStorageMock.removeItem).toHaveBeenCalledWith('token')
+  })
+
+  it('logs out user and removes tokens from both storages', async () => {
     vi.mocked(api.post).mockResolvedValue({ data: { message: 'Logged out' } })
 
     const { result } = renderHook(() => useAuthStore())
@@ -96,10 +168,11 @@ describe('Auth Store', () => {
     expect(result.current.token).toBeNull()
     expect(result.current.isAuthenticated).toBe(false)
     expect(localStorageMock.removeItem).toHaveBeenCalledWith('token')
+    expect(sessionStorageMock.removeItem).toHaveBeenCalledWith('token')
   })
 
   it('fetches user profile', async () => {
-    const mockUser = { id: 1, name: 'John', email: 'john@example.com', username: 'john', email_verified_at: null, phone: '0912345678', role: 'customer', status: 'active', created_at: '2026-01-01', updated_at: '2026-01-01' }
+    const mockUser = { id: 1, name: 'John', email: 'john@example.com', username: 'john', email_verified_at: null, phone: '0912345678', role: 'customer' as const, status: 'active', created_at: '2026-01-01', updated_at: '2026-01-01' }
     vi.mocked(api.get).mockResolvedValue({ data: { data: mockUser } })
 
     const { result } = renderHook(() => useAuthStore())

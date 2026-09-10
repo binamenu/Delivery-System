@@ -21,18 +21,20 @@ export default function RegisterPage() {
 
   const registerSchema = z
     .object({
-      name: z.string().min(1, 'Name is required'),
-      username: z.string().min(3, 'Username must be at least 3 characters'),
-      email: z.string().email('Invalid email address'),
+      name: z.string().min(1, t('auth.nameRequired')),
+      username: z.string().min(3, t('auth.usernameMin')),
+      email: z.string().email(t('auth.emailInvalid')),
       phone: z
         .string()
-        .regex(/^09\d{8}$/, 'Phone number must start with 09 and have 10 digits'),
-      password: z.string().min(8, 'Password must be at least 8 characters'),
-      password_confirmation: z.string().min(1, 'Confirm password is required'),
-      terms: z.boolean().optional(),
+        .regex(/^09\d{8}$/, t('auth.phoneInvalid')),
+      password: z.string().min(8, t('auth.passwordMin')),
+      password_confirmation: z.string().min(1, t('auth.confirmPasswordRequired')),
+      terms: z.boolean().refine((val) => val === true, {
+        message: t('auth.termsRequired'),
+      }),
     })
     .refine((data) => data.password === data.password_confirmation, {
-      message: 'Passwords do not match',
+      message: t('auth.passwordMatch'),
       path: ['password_confirmation'],
     })
 
@@ -44,6 +46,9 @@ export default function RegisterPage() {
     formState: { errors },
   } = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
+    defaultValues: {
+      terms: false,
+    },
   })
 
   const onSubmit = async (data: RegisterForm) => {
@@ -56,11 +61,11 @@ export default function RegisterPage() {
         password: data.password,
         password_confirmation: data.password_confirmation,
       })
-      toast.success('Account created successfully')
+      toast.success(t('auth.registerSuccess'))
       navigate('/home')
     } catch (error: unknown) {
       const message =
-        error instanceof Error ? error.message : 'Registration failed'
+        error instanceof Error ? error.message : t('auth.registerFailed')
       toast.error(message)
     }
   }
@@ -80,17 +85,17 @@ export default function RegisterPage() {
               className="inline-flex items-center gap-1 text-xs sm:text-sm text-gray-500 hover:text-gray-900 font-medium transition-colors"
             >
               <ChevronLeft className="w-4 h-4" />
-              Back to Sign In
+              {t('auth.backToSignIn')}
             </Link>
           </div>
 
           {/* Header */}
           <div className="space-y-1 text-left">
             <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
-              Create your account
+              {t('auth.registerTitle')}
             </h2>
             <p className="text-gray-500 text-sm sm:text-base font-normal">
-              Join Tenadam and start ordering in minutes.
+              {t('auth.registerSubtitle')}
             </p>
           </div>
 
@@ -99,13 +104,13 @@ export default function RegisterPage() {
             {/* Full Name */}
             <div className="space-y-1">
               <Label htmlFor="name" className="text-xs sm:text-sm font-semibold text-gray-700">
-                Full Name
+                {t('auth.fullName')}
               </Label>
               <Input
                 id="name"
                 type="text"
                 placeholder="Tigist Haile"
-                aria-label="Full Name"
+                aria-label={t('auth.fullName')}
                 className="h-11 rounded-full px-4 border-gray-200 focus:border-[#f05a24] focus:ring-[#f05a24] bg-white text-sm"
                 {...register('name')}
               />
@@ -117,13 +122,13 @@ export default function RegisterPage() {
             {/* Username */}
             <div className="space-y-1">
               <Label htmlFor="username" className="text-xs sm:text-sm font-semibold text-gray-700">
-                Username
+                {t('auth.username')}
               </Label>
               <Input
                 id="username"
                 type="text"
                 placeholder="Choose a username"
-                aria-label="Username"
+                aria-label={t('auth.username')}
                 className="h-11 rounded-full px-4 border-gray-200 focus:border-[#f05a24] focus:ring-[#f05a24] bg-white text-sm"
                 {...register('username')}
               />
@@ -135,13 +140,13 @@ export default function RegisterPage() {
             {/* Email Address */}
             <div className="space-y-1">
               <Label htmlFor="email" className="text-xs sm:text-sm font-semibold text-gray-700">
-                Email Address
+                {t('auth.email')}
               </Label>
               <Input
                 id="email"
                 type="email"
                 placeholder="tigist@example.com"
-                aria-label="Email Address"
+                aria-label={t('auth.email')}
                 className="h-11 rounded-full px-4 border-gray-200 focus:border-[#f05a24] focus:ring-[#f05a24] bg-white text-sm"
                 {...register('email')}
               />
@@ -153,13 +158,13 @@ export default function RegisterPage() {
             {/* Phone Number */}
             <div className="space-y-1">
               <Label htmlFor="phone" className="text-xs sm:text-sm font-semibold text-gray-700">
-                Phone Number
+                {t('auth.phone')}
               </Label>
               <Input
                 id="phone"
                 type="tel"
                 placeholder="0912345678"
-                aria-label="Phone Number"
+                aria-label={t('auth.phone')}
                 className="h-11 rounded-full px-4 border-gray-200 focus:border-[#f05a24] focus:ring-[#f05a24] bg-white text-sm"
                 {...register('phone')}
               />
@@ -171,13 +176,13 @@ export default function RegisterPage() {
             {/* Password */}
             <div className="space-y-1">
               <Label htmlFor="password" className="text-xs sm:text-sm font-semibold text-gray-700">
-                Password
+                {t('auth.password')}
               </Label>
               <Input
                 id="password"
                 type={showPassword ? 'text' : 'password'}
                 placeholder="Min. 8 characters"
-                aria-label="Password"
+                aria-label={t('auth.password')}
                 className="h-11 rounded-full px-4 border-gray-200 focus:border-[#f05a24] focus:ring-[#f05a24] bg-white text-sm"
                 {...register('password')}
               />
@@ -185,14 +190,16 @@ export default function RegisterPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
+                  aria-pressed={showPassword}
                   className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 cursor-pointer select-none font-medium"
                 >
                   {showPassword ? (
-                    <EyeOff className="w-3.5 h-3.5" />
+                    <EyeOff className="w-3.5 h-3.5" aria-hidden="true" />
                   ) : (
-                    <Eye className="w-3.5 h-3.5" />
+                    <Eye className="w-3.5 h-3.5" aria-hidden="true" />
                   )}
-                  <span>Show password</span>
+                  <span>{showPassword ? t('auth.hidePassword') : t('auth.showPassword')}</span>
                 </button>
               </div>
               {errors.password && (
@@ -206,13 +213,13 @@ export default function RegisterPage() {
                 htmlFor="password_confirmation"
                 className="text-xs sm:text-sm font-semibold text-gray-700"
               >
-                Confirm Password
+                {t('auth.confirmPassword')}
               </Label>
               <Input
                 id="password_confirmation"
                 type={showConfirmPassword ? 'text' : 'password'}
                 placeholder="Repeat password"
-                aria-label="Confirm Password"
+                aria-label={t('auth.confirmPassword')}
                 className="h-11 rounded-full px-4 border-gray-200 focus:border-[#f05a24] focus:ring-[#f05a24] bg-white text-sm"
                 {...register('password_confirmation')}
               />
@@ -220,14 +227,16 @@ export default function RegisterPage() {
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  aria-label={showConfirmPassword ? t('auth.hideConfirmPassword') : t('auth.showConfirmPassword')}
+                  aria-pressed={showConfirmPassword}
                   className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 cursor-pointer select-none font-medium"
                 >
                   {showConfirmPassword ? (
-                    <EyeOff className="w-3.5 h-3.5" />
+                    <EyeOff className="w-3.5 h-3.5" aria-hidden="true" />
                   ) : (
-                    <Eye className="w-3.5 h-3.5" />
+                    <Eye className="w-3.5 h-3.5" aria-hidden="true" />
                   )}
-                  <span>Show</span>
+                  <span>{showConfirmPassword ? t('auth.hideConfirmPassword') : t('auth.showConfirmPassword')}</span>
                 </button>
               </div>
               {errors.password_confirmation && (
@@ -243,20 +252,32 @@ export default function RegisterPage() {
                 <input
                   type="checkbox"
                   id="terms"
+                  aria-label={t('auth.termsAndConditions')}
                   className="w-4 h-4 rounded border-gray-300 text-[#f05a24] focus:ring-[#f05a24] mt-0.5 cursor-pointer"
                   {...register('terms')}
                 />
                 <span className="text-xs sm:text-sm text-gray-600 font-normal leading-tight">
-                  I agree to the{' '}
-                  <a href="#" className="text-[#f05a24] font-semibold hover:underline">
-                    Terms & Conditions
-                  </a>{' '}
-                  and{' '}
-                  <a href="#" className="text-[#f05a24] font-semibold hover:underline">
-                    Privacy Policy
-                  </a>
+                  {t('auth.agreeTermsPrefix')}{' '}
+                  <button
+                    type="button"
+                    onClick={() => toast.info(t('auth.termsNotice'))}
+                    className="text-[#f05a24] font-semibold hover:underline cursor-pointer bg-transparent border-none p-0 inline"
+                  >
+                    {t('auth.termsAndConditions')}
+                  </button>{' '}
+                  {t('auth.and')}{' '}
+                  <button
+                    type="button"
+                    onClick={() => toast.info(t('auth.termsNotice'))}
+                    className="text-[#f05a24] font-semibold hover:underline cursor-pointer bg-transparent border-none p-0 inline"
+                  >
+                    {t('auth.privacyPolicy')}
+                  </button>
                 </span>
               </label>
+              {errors.terms && (
+                <p className="text-xs text-red-500 mt-1">{errors.terms.message}</p>
+              )}
             </div>
 
             {/* Submit Button */}
@@ -265,21 +286,19 @@ export default function RegisterPage() {
               disabled={isLoading}
               className="w-full h-12 bg-[#f05a24] hover:bg-[#d84d1c] text-white font-semibold rounded-full text-base transition-all duration-200 shadow-md shadow-[#f05a24]/20 cursor-pointer mt-2"
             >
-              {isLoading
-                ? t('common.loading') || 'Loading...'
-                : 'Create Account'}
+              {isLoading ? t('common.loading') : t('auth.registerButton')}
             </Button>
           </form>
 
           {/* Footer Link */}
           <div className="text-center pt-1">
             <p className="text-xs sm:text-sm text-gray-500 font-normal">
-              Already have an account?{' '}
+              {t('auth.hasAccount')}{' '}
               <Link
                 to="/login"
                 className="text-[#f05a24] font-semibold hover:underline"
               >
-                Sign in
+                {t('auth.login')}
               </Link>
             </p>
           </div>

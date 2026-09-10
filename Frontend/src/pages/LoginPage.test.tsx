@@ -27,7 +27,7 @@ describe('LoginPage', () => {
     expect(screen.getByText('Welcome back')).toBeInTheDocument()
     expect(screen.getByText(/sign in to your account/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument()
-    expect(screen.getByLabelText(/password/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/^password$/i)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument()
   })
 
@@ -57,7 +57,7 @@ describe('LoginPage', () => {
     expect(await screen.findByText('Password is required')).toBeInTheDocument()
   })
 
-  it('submits form with valid data', async () => {
+  it('submits form with valid data and remember_me checked', async () => {
     const user = userEvent.setup()
     const mockLogin = vi.fn().mockResolvedValue(undefined)
 
@@ -81,7 +81,42 @@ describe('LoginPage', () => {
     )
 
     await user.type(screen.getByLabelText(/email/i), 'john@example.com')
-    await user.type(screen.getByLabelText(/password/i), 'password123')
+    await user.type(screen.getByLabelText(/^password$/i), 'password123')
+    await user.click(screen.getByRole('checkbox', { name: /remember me/i }))
+    await user.click(screen.getByRole('button', { name: /sign in/i }))
+
+    expect(mockLogin).toHaveBeenCalledWith({
+      login: 'john@example.com',
+      password: 'password123',
+      remember_me: true,
+    })
+  })
+
+  it('submits form with remember_me unchecked', async () => {
+    const user = userEvent.setup()
+    const mockLogin = vi.fn().mockResolvedValue(undefined)
+
+    const { useAuthStore } = await import('@/stores/auth')
+    vi.mocked(useAuthStore).mockReturnValue({
+      login: mockLogin,
+      isLoading: false,
+      isAuthenticated: false,
+      user: null,
+      token: null,
+      logout: vi.fn(),
+      getProfile: vi.fn(),
+      register: vi.fn(),
+      setToken: vi.fn(),
+    })
+
+    render(
+      <MemoryRouter>
+        <LoginPage />
+      </MemoryRouter>
+    )
+
+    await user.type(screen.getByLabelText(/email/i), 'john@example.com')
+    await user.type(screen.getByLabelText(/^password$/i), 'password123')
     await user.click(screen.getByRole('button', { name: /sign in/i }))
 
     expect(mockLogin).toHaveBeenCalledWith(
@@ -90,6 +125,24 @@ describe('LoginPage', () => {
         password: 'password123',
       })
     )
+    expect(mockLogin.mock.calls[0][0].remember_me).toBeFalsy()
+  })
+
+  it('toggles password visibility with accessible aria attributes', async () => {
+    const user = userEvent.setup()
+
+    render(
+      <MemoryRouter>
+        <LoginPage />
+      </MemoryRouter>
+    )
+
+    const toggleBtn = screen.getByRole('button', { name: /show password/i })
+    expect(toggleBtn).toHaveAttribute('aria-pressed', 'false')
+
+    await user.click(toggleBtn)
+
+    expect(screen.getByRole('button', { name: /hide password/i })).toHaveAttribute('aria-pressed', 'true')
   })
 
   it('shows loading state', async () => {

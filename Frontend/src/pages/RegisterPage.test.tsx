@@ -30,7 +30,7 @@ describe('RegisterPage', () => {
     expect(screen.getByLabelText(/username/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/phone/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/^password$/i)).toBeInTheDocument()
-    expect(screen.getByLabelText(/confirm password/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/^confirm password$/i)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /create account/i })).toBeInTheDocument()
   })
 
@@ -73,7 +73,7 @@ describe('RegisterPage', () => {
     await user.type(screen.getByLabelText(/username/i), 'johndoe')
     await user.type(screen.getByLabelText(/phone/i), 'invalid')
     await user.type(screen.getByLabelText(/^password$/i), 'password123')
-    await user.type(screen.getByLabelText(/confirm password/i), 'password123')
+    await user.type(screen.getByLabelText(/^confirm password$/i), 'password123')
 
     await user.click(screen.getByRole('button', { name: /create account/i }))
 
@@ -125,16 +125,19 @@ describe('RegisterPage', () => {
       </MemoryRouter>
     )
 
+    await user.type(screen.getByLabelText(/full name/i), 'John Doe')
+    await user.type(screen.getByLabelText(/email/i), 'john@example.com')
+    await user.type(screen.getByLabelText(/username/i), 'johndoe')
+    await user.type(screen.getByLabelText(/phone/i), '0912345678')
     await user.type(screen.getByLabelText(/^password$/i), 'password123')
-    await user.type(screen.getByLabelText(/confirm password/i), 'different')
-    await user.tab()
-
+    await user.type(screen.getByLabelText(/^confirm password$/i), 'different')
+    await user.click(screen.getByRole('checkbox', { name: /terms/i }))
     await user.click(screen.getByRole('button', { name: /create account/i }))
 
     expect(await screen.findByText('Passwords do not match')).toBeInTheDocument()
   })
 
-  it('submits form with valid data', async () => {
+  it('validates that terms must be explicitly checked', async () => {
     const user = userEvent.setup()
     const mockRegister = vi.fn().mockResolvedValue(undefined)
 
@@ -162,7 +165,46 @@ describe('RegisterPage', () => {
     await user.type(screen.getByLabelText(/username/i), 'johndoe')
     await user.type(screen.getByLabelText(/phone/i), '0912345678')
     await user.type(screen.getByLabelText(/^password$/i), 'password123')
-    await user.type(screen.getByLabelText(/confirm password/i), 'password123')
+    await user.type(screen.getByLabelText(/^confirm password$/i), 'password123')
+    // Leave terms unchecked
+    await user.click(screen.getByRole('button', { name: /create account/i }))
+
+    expect(
+      await screen.findByText('You must agree to the Terms & Conditions and Privacy Policy')
+    ).toBeInTheDocument()
+    expect(mockRegister).not.toHaveBeenCalled()
+  })
+
+  it('submits form with valid data and terms checked', async () => {
+    const user = userEvent.setup()
+    const mockRegister = vi.fn().mockResolvedValue(undefined)
+
+    const { useAuthStore } = await import('@/stores/auth')
+    vi.mocked(useAuthStore).mockReturnValue({
+      register: mockRegister,
+      isLoading: false,
+      isAuthenticated: false,
+      user: null,
+      token: null,
+      login: vi.fn(),
+      logout: vi.fn(),
+      getProfile: vi.fn(),
+      setToken: vi.fn(),
+    })
+
+    render(
+      <MemoryRouter>
+        <RegisterPage />
+      </MemoryRouter>
+    )
+
+    await user.type(screen.getByLabelText(/full name/i), 'John Doe')
+    await user.type(screen.getByLabelText(/email/i), 'john@example.com')
+    await user.type(screen.getByLabelText(/username/i), 'johndoe')
+    await user.type(screen.getByLabelText(/phone/i), '0912345678')
+    await user.type(screen.getByLabelText(/^password$/i), 'password123')
+    await user.type(screen.getByLabelText(/^confirm password$/i), 'password123')
+    await user.click(screen.getByRole('checkbox', { name: /terms/i }))
     await user.click(screen.getByRole('button', { name: /create account/i }))
 
     expect(mockRegister).toHaveBeenCalledWith({
@@ -173,5 +215,25 @@ describe('RegisterPage', () => {
       password: 'password123',
       password_confirmation: 'password123',
     })
+  })
+
+  it('toggles password and confirm password visibility with accessible aria attributes', async () => {
+    const user = userEvent.setup()
+
+    render(
+      <MemoryRouter>
+        <RegisterPage />
+      </MemoryRouter>
+    )
+
+    const pwdToggle = screen.getByRole('button', { name: /show password/i })
+    expect(pwdToggle).toHaveAttribute('aria-pressed', 'false')
+    await user.click(pwdToggle)
+    expect(screen.getByRole('button', { name: /hide password/i })).toHaveAttribute('aria-pressed', 'true')
+
+    const confirmPwdToggle = screen.getByRole('button', { name: /show confirm password/i })
+    expect(confirmPwdToggle).toHaveAttribute('aria-pressed', 'false')
+    await user.click(confirmPwdToggle)
+    expect(screen.getByRole('button', { name: /hide confirm password/i })).toHaveAttribute('aria-pressed', 'true')
   })
 })

@@ -19,8 +19,8 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
 
   const loginSchema = z.object({
-    login: z.string().min(1, 'Email or username is required'),
-    password: z.string().min(1, 'Password is required'),
+    login: z.string().min(1, t('auth.emailRequired')),
+    password: z.string().min(1, t('auth.passwordRequired')),
     remember_me: z.boolean().optional(),
   })
 
@@ -37,10 +37,10 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginForm) => {
     try {
       await login(data)
-      toast.success('Logged in successfully')
+      toast.success(t('auth.loginSuccess'))
       navigate('/home')
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Login failed'
+      const message = error instanceof Error ? error.message : t('auth.loginFailed')
       toast.error(message)
     }
   }
@@ -56,10 +56,10 @@ export default function LoginPage() {
           {/* Header */}
           <div className="space-y-1.5 text-left">
             <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
-              Welcome back
+              {t('auth.loginTitle')}
             </h2>
             <p className="text-gray-500 text-sm sm:text-base font-normal">
-              Sign in to your account to continue
+              {t('auth.loginSubtitle')}
             </p>
           </div>
 
@@ -68,13 +68,13 @@ export default function LoginPage() {
             {/* Email Address field */}
             <div className="space-y-1.5">
               <Label htmlFor="login" className="text-xs sm:text-sm font-semibold text-gray-700">
-                Email or Username
+                {t('auth.emailOrUsername')}
               </Label>
               <Input
                 id="login"
                 type="text"
                 placeholder="you@example.com"
-                aria-label="Email Address or Username"
+                aria-label={t('auth.emailOrUsername')}
                 className="h-11 rounded-full px-4 border-gray-200 focus:border-[#f05a24] focus:ring-[#f05a24] bg-white text-sm"
                 {...register('login')}
               />
@@ -86,13 +86,13 @@ export default function LoginPage() {
             {/* Password field */}
             <div className="space-y-1.5">
               <Label htmlFor="password" className="text-xs sm:text-sm font-semibold text-gray-700">
-                Password
+                {t('auth.password')}
               </Label>
               <Input
                 id="password"
                 type={showPassword ? 'text' : 'password'}
                 placeholder="Enter your password"
-                aria-label="Password"
+                aria-label={t('auth.password')}
                 className="h-11 rounded-full px-4 border-gray-200 focus:border-[#f05a24] focus:ring-[#f05a24] bg-white text-sm"
                 {...register('password')}
               />
@@ -101,14 +101,16 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
+                  aria-pressed={showPassword}
                   className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 cursor-pointer select-none font-medium"
                 >
                   {showPassword ? (
-                    <EyeOff className="w-3.5 h-3.5" />
+                    <EyeOff className="w-3.5 h-3.5" aria-hidden="true" />
                   ) : (
-                    <Eye className="w-3.5 h-3.5" />
+                    <Eye className="w-3.5 h-3.5" aria-hidden="true" />
                   )}
-                  <span>Show password</span>
+                  <span>{showPassword ? t('auth.hidePassword') : t('auth.showPassword')}</span>
                 </button>
               </div>
               {errors.password && (
@@ -126,14 +128,14 @@ export default function LoginPage() {
                   {...register('remember_me')}
                 />
                 <span className="text-xs sm:text-sm text-gray-600 font-normal">
-                  Remember me
+                  {t('auth.rememberMe')}
                 </span>
               </label>
               <Link
-                to="#"
-                className="text-xs sm:text-sm font-semibold text-[#f05a24] hover:underline"
+                to="/forgot-password"
+                className="text-xs sm:text-sm font-semibold text-[#f05a24] hover:underline cursor-pointer"
               >
-                Forgot password?
+                {t('auth.forgotPassword')}
               </Link>
             </div>
 
@@ -143,19 +145,19 @@ export default function LoginPage() {
               disabled={isLoading}
               className="w-full h-12 bg-[#f05a24] hover:bg-[#d84d1c] text-white font-semibold rounded-full text-base transition-all duration-200 shadow-md shadow-[#f05a24]/20 cursor-pointer"
             >
-              {isLoading ? (t('common.loading') || 'Loading...') : 'Sign In'}
+              {isLoading ? t('common.loading') : t('auth.loginButton')}
             </Button>
           </form>
 
           {/* Footer Link */}
           <div className="text-center pt-2">
             <p className="text-xs sm:text-sm text-gray-500 font-normal">
-              Don't have an account?{' '}
+              {t('auth.noAccount')}{' '}
               <Link
                 to="/register"
                 className="text-[#f05a24] font-semibold hover:underline"
               >
-                Create one
+                {t('auth.createOne')}
               </Link>
             </p>
           </div>

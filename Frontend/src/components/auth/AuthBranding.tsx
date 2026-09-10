@@ -1,12 +1,15 @@
 import { Truck, Check } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 export default function AuthBranding() {
+  const { t } = useTranslation()
+
   const features = [
-    'Browse 180+ restaurants in Addis Ababa',
-    'Track your order in real-time',
-    'Delivered in 25 – 45 minutes',
-    'Want to earn? Apply as a driver from your profile',
-    'Own a restaurant? Register it from your profile',
+    t('auth.feature1'),
+    t('auth.feature2'),
+    t('auth.feature3'),
+    t('auth.feature4'),
+    t('auth.feature5'),
   ]
 
   return (
@@ -23,12 +26,11 @@ export default function AuthBranding() {
         </div>
 
         {/* Main Heading & Subtitle */}
-        <h1 className="text-3xl sm:text-4xl lg:text-[42px] font-extrabold text-white leading-[1.15] tracking-tight mb-4">
-          Your city's food<br />
-          delivered fast.
+        <h1 className="text-3xl sm:text-4xl lg:text-[42px] font-extrabold text-white leading-[1.15] tracking-tight mb-4 whitespace-pre-line">
+          {t('auth.brandingTitle')}
         </h1>
         <p className="text-slate-400 text-sm sm:text-base font-normal max-w-md mb-8">
-          From local favorites to grocery essentials — all in one app.
+          {t('auth.brandingSubtitle')}
         </p>
 
         {/* Feature List */}
