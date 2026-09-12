@@ -72,9 +72,14 @@ export default function SettingsPage() {
   const roleLabel = ROLE_LABELS[user?.role ?? ''] ?? user?.role ?? 'Administrator'
 
   const handleSystemControlChange = (key: string, value: boolean) => {
-    const destructiveActions = ['maintenanceMode', 'allowRestaurantRegistrations', 'allowUserRegistrations']
+    const confirmOnTrue = ['maintenanceMode']
+    const confirmOnFalse = ['allowRestaurantRegistrations', 'allowUserRegistrations']
     
-    if (destructiveActions.includes(key) && value === true) {
+    const shouldConfirm = 
+      (confirmOnTrue.includes(key) && value === true) ||
+      (confirmOnFalse.includes(key) && value === false)
+    
+    if (shouldConfirm) {
       let message = ''
       if (key === 'maintenanceMode') {
         message = 'Are you sure you want to enable maintenance mode? This will block all user access to the platform. Users will not be able to place orders or access their accounts.'
