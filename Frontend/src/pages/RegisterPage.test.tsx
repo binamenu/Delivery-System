@@ -24,14 +24,14 @@ describe('RegisterPage', () => {
       </MemoryRouter>
     )
 
-    expect(screen.getByText('Create an account')).toBeInTheDocument()
-    expect(screen.getByLabelText('Name')).toBeInTheDocument()
-    expect(screen.getByLabelText('Email')).toBeInTheDocument()
-    expect(screen.getByLabelText('Username')).toBeInTheDocument()
-    expect(screen.getByLabelText('Phone Number')).toBeInTheDocument()
-    expect(screen.getByLabelText('Password')).toBeInTheDocument()
-    expect(screen.getByLabelText('Confirm Password')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /sign up/i })).toBeInTheDocument()
+    expect(screen.getByText('Create your account')).toBeInTheDocument()
+    expect(screen.getByLabelText(/full name/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/email/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/username/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/phone/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/^password$/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/^confirm password$/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /create account/i })).toBeInTheDocument()
   })
 
   it('renders sign in link', () => {
@@ -42,7 +42,7 @@ describe('RegisterPage', () => {
     )
 
     expect(screen.getByText(/already have an account/i)).toBeInTheDocument()
-    expect(screen.getByText('Sign In')).toHaveAttribute('href', '/login')
+    expect(screen.getByText('Sign in')).toHaveAttribute('href', '/login')
   })
 
   it('validates required fields', async () => {
@@ -54,7 +54,7 @@ describe('RegisterPage', () => {
       </MemoryRouter>
     )
 
-    await user.click(screen.getByRole('button', { name: /sign up/i }))
+    await user.click(screen.getByRole('button', { name: /create account/i }))
 
     expect(await screen.findByText('Name is required')).toBeInTheDocument()
   })
@@ -68,14 +68,14 @@ describe('RegisterPage', () => {
       </MemoryRouter>
     )
 
-    await user.type(screen.getByLabelText('Name'), 'John Doe')
-    await user.type(screen.getByLabelText('Email'), 'john@example.com')
-    await user.type(screen.getByLabelText('Username'), 'johndoe')
-    await user.type(screen.getByLabelText('Phone Number'), 'invalid')
-    await user.type(screen.getByLabelText('Password'), 'password123')
-    await user.type(screen.getByLabelText('Confirm Password'), 'password123')
+    await user.type(screen.getByLabelText(/full name/i), 'John Doe')
+    await user.type(screen.getByLabelText(/email/i), 'john@example.com')
+    await user.type(screen.getByLabelText(/username/i), 'johndoe')
+    await user.type(screen.getByLabelText(/phone/i), 'invalid')
+    await user.type(screen.getByLabelText(/^password$/i), 'password123')
+    await user.type(screen.getByLabelText(/^confirm password$/i), 'password123')
 
-    await user.click(screen.getByRole('button', { name: /sign up/i }))
+    await user.click(screen.getByRole('button', { name: /create account/i }))
 
     expect(
       await screen.findByText('Phone number must start with 09 and have 10 digits')
@@ -91,9 +91,9 @@ describe('RegisterPage', () => {
       </MemoryRouter>
     )
 
-    await user.type(screen.getByLabelText('Email'), 'not-an-email')
+    await user.type(screen.getByLabelText(/email/i), 'not-an-email')
 
-    const form = screen.getByRole('button', { name: /sign up/i }).closest('form')!
+    const form = screen.getByRole('button', { name: /create account/i }).closest('form')!
     fireEvent.submit(form)
 
     expect(await screen.findByText('Invalid email address')).toBeInTheDocument()
@@ -108,10 +108,10 @@ describe('RegisterPage', () => {
       </MemoryRouter>
     )
 
-    await user.type(screen.getByLabelText('Password'), 'short')
+    await user.type(screen.getByLabelText(/^password$/i), 'short')
     await user.tab()
 
-    await user.click(screen.getByRole('button', { name: /sign up/i }))
+    await user.click(screen.getByRole('button', { name: /create account/i }))
 
     expect(await screen.findByText('Password must be at least 8 characters')).toBeInTheDocument()
   })
@@ -125,16 +125,19 @@ describe('RegisterPage', () => {
       </MemoryRouter>
     )
 
-    await user.type(screen.getByLabelText('Password'), 'password123')
-    await user.type(screen.getByLabelText('Confirm Password'), 'different')
-    await user.tab()
-
-    await user.click(screen.getByRole('button', { name: /sign up/i }))
+    await user.type(screen.getByLabelText(/full name/i), 'John Doe')
+    await user.type(screen.getByLabelText(/email/i), 'john@example.com')
+    await user.type(screen.getByLabelText(/username/i), 'johndoe')
+    await user.type(screen.getByLabelText(/phone/i), '0912345678')
+    await user.type(screen.getByLabelText(/^password$/i), 'password123')
+    await user.type(screen.getByLabelText(/^confirm password$/i), 'different')
+    await user.click(screen.getByRole('checkbox', { name: /terms/i }))
+    await user.click(screen.getByRole('button', { name: /create account/i }))
 
     expect(await screen.findByText('Passwords do not match')).toBeInTheDocument()
   })
 
-  it('submits form with valid data', async () => {
+  it('validates that terms must be explicitly checked', async () => {
     const user = userEvent.setup()
     const mockRegister = vi.fn().mockResolvedValue(undefined)
 
@@ -157,13 +160,52 @@ describe('RegisterPage', () => {
       </MemoryRouter>
     )
 
-    await user.type(screen.getByLabelText('Name'), 'John Doe')
-    await user.type(screen.getByLabelText('Email'), 'john@example.com')
-    await user.type(screen.getByLabelText('Username'), 'johndoe')
-    await user.type(screen.getByLabelText('Phone Number'), '0912345678')
-    await user.type(screen.getByLabelText('Password'), 'password123')
-    await user.type(screen.getByLabelText('Confirm Password'), 'password123')
-    await user.click(screen.getByRole('button', { name: /sign up/i }))
+    await user.type(screen.getByLabelText(/full name/i), 'John Doe')
+    await user.type(screen.getByLabelText(/email/i), 'john@example.com')
+    await user.type(screen.getByLabelText(/username/i), 'johndoe')
+    await user.type(screen.getByLabelText(/phone/i), '0912345678')
+    await user.type(screen.getByLabelText(/^password$/i), 'password123')
+    await user.type(screen.getByLabelText(/^confirm password$/i), 'password123')
+    // Leave terms unchecked
+    await user.click(screen.getByRole('button', { name: /create account/i }))
+
+    expect(
+      await screen.findByText('You must agree to the Terms & Conditions and Privacy Policy')
+    ).toBeInTheDocument()
+    expect(mockRegister).not.toHaveBeenCalled()
+  })
+
+  it('submits form with valid data and terms checked', async () => {
+    const user = userEvent.setup()
+    const mockRegister = vi.fn().mockResolvedValue(undefined)
+
+    const { useAuthStore } = await import('@/stores/auth')
+    vi.mocked(useAuthStore).mockReturnValue({
+      register: mockRegister,
+      isLoading: false,
+      isAuthenticated: false,
+      user: null,
+      token: null,
+      login: vi.fn(),
+      logout: vi.fn(),
+      getProfile: vi.fn(),
+      setToken: vi.fn(),
+    })
+
+    render(
+      <MemoryRouter>
+        <RegisterPage />
+      </MemoryRouter>
+    )
+
+    await user.type(screen.getByLabelText(/full name/i), 'John Doe')
+    await user.type(screen.getByLabelText(/email/i), 'john@example.com')
+    await user.type(screen.getByLabelText(/username/i), 'johndoe')
+    await user.type(screen.getByLabelText(/phone/i), '0912345678')
+    await user.type(screen.getByLabelText(/^password$/i), 'password123')
+    await user.type(screen.getByLabelText(/^confirm password$/i), 'password123')
+    await user.click(screen.getByRole('checkbox', { name: /terms/i }))
+    await user.click(screen.getByRole('button', { name: /create account/i }))
 
     expect(mockRegister).toHaveBeenCalledWith({
       name: 'John Doe',
@@ -173,5 +215,25 @@ describe('RegisterPage', () => {
       password: 'password123',
       password_confirmation: 'password123',
     })
+  })
+
+  it('toggles password and confirm password visibility with accessible aria attributes', async () => {
+    const user = userEvent.setup()
+
+    render(
+      <MemoryRouter>
+        <RegisterPage />
+      </MemoryRouter>
+    )
+
+    const pwdToggle = screen.getByRole('button', { name: /show password/i })
+    expect(pwdToggle).toHaveAttribute('aria-pressed', 'false')
+    await user.click(pwdToggle)
+    expect(screen.getByRole('button', { name: /hide password/i })).toHaveAttribute('aria-pressed', 'true')
+
+    const confirmPwdToggle = screen.getByRole('button', { name: /show confirm password/i })
+    expect(confirmPwdToggle).toHaveAttribute('aria-pressed', 'false')
+    await user.click(confirmPwdToggle)
+    expect(screen.getByRole('button', { name: /hide confirm password/i })).toHaveAttribute('aria-pressed', 'true')
   })
 })
