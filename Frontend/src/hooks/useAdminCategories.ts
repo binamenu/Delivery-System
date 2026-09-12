@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { fetchCategories } from '@/lib/categoriesApi'
 import { fetchRestaurants } from '@/lib/restaurantsApi'
-import type { CategoryFormInput, FoodCategory } from '@/types/Categories'
+import type { FoodCategory } from '@/types/Categories'
 
 const QUERY_KEY = ['categories'] as const
 
@@ -40,7 +40,6 @@ export function useAdminCategories() {
     queryFn: fetchRestaurants,
     staleTime: 30_000,
   })
-  const [isSaving] = useState(false)
 
   const restaurantCategories = useMemo(
     () => (restaurantsQuery.data ?? []).map((restaurant) => restaurant.category).filter(Boolean),
@@ -52,15 +51,15 @@ export function useAdminCategories() {
     [query.data, restaurantCategories],
   )
 
-  const addCategory = async (input: CategoryFormInput) => {
+  const addCategory = async (_input: unknown) => {
     throw new Error('Category management is not available yet. Backend support is pending.')
   }
 
-  const editCategory = async (id: number, input: CategoryFormInput) => {
+  const editCategory = async (_id: number, _input: unknown) => {
     throw new Error('Category management is not available yet. Backend support is pending.')
   }
 
-  const removeCategory = async (category: FoodCategory) => {
+  const removeCategory = async (_category: FoodCategory) => {
     throw new Error('Category management is not available yet. Backend support is pending.')
   }
 
@@ -69,7 +68,7 @@ export function useAdminCategories() {
     isLoading: query.isLoading,
     isError: query.isError,
     errorMessage: query.error ? getErrorMessage(query.error) : null,
-    isSaving,
+    isSaving: false,
     addCategory,
     editCategory,
     removeCategory,

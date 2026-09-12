@@ -1,15 +1,4 @@
-import type {
-  AdminPasswordForm,
-  AdminProfileForm,
-  AdminSettingsState,
-  AdminPlatformSettings,
-  AdminNotificationSettings,
-  AdminPrivacySettings,
-  AdminSystemControls,
-  AdminLanguage,
-} from '@/types/Settings'
-
-export async function updateAdminPassword(form: AdminPasswordForm) {
+export async function updateAdminPassword(form: { newPassword: string; confirmPassword: string }) {
   if (form.newPassword !== form.confirmPassword) {
     throw new Error('New password and confirm password do not match')
   }
@@ -19,7 +8,7 @@ export async function updateAdminPassword(form: AdminPasswordForm) {
   throw new Error('Password change is not available yet. Backend support is pending.')
 }
 
-export async function updateAdminProfile(form: AdminProfileForm) {
+export async function updateAdminProfile(form: { name: string; email: string }) {
   if (!form.name || !form.name.trim()) {
     throw new Error('Name is required')
   }
@@ -33,41 +22,40 @@ export async function updateAdminProfile(form: AdminProfileForm) {
   throw new Error('Profile update is not available yet. Backend support is pending.')
 }
 
-export async function updateTwoFactorStatus(enabled: boolean) {
+export async function updateTwoFactorStatus(_enabled: boolean) {
   throw new Error('Two-factor authentication is not available yet. Backend support is pending.')
 }
 
-export async function updateSessionTimeout(minutes: number) {
+export async function updateSessionTimeout(_minutes: number) {
   throw new Error('Session timeout update is not available yet. Backend support is pending.')
 }
 
-export async function updatePrivacySettings(privacy: AdminPrivacySettings) {
+export async function updatePrivacySettings(_privacy: unknown) {
   throw new Error('Privacy settings update is not available yet. Backend support is pending.')
 }
 
-export async function updatePlatformSettings(platform: AdminPlatformSettings) {
+export async function updatePlatformSettings(_platform: unknown) {
   throw new Error('Platform settings update is not available yet. Backend support is pending.')
 }
 
-export async function updateNotificationSettings(notifications: AdminNotificationSettings) {
+export async function updateNotificationSettings(_notifications: unknown) {
   throw new Error('Notification settings update is not available yet. Backend support is pending.')
 }
 
-export async function updateSystemControls(system: AdminSystemControls) {
+export async function updateSystemControls(_system: unknown) {
   throw new Error('System controls update is not available yet. Backend support is pending.')
 }
 
-export async function updateLanguage(language: AdminLanguage) {
+export async function updateLanguage(_language: string) {
   throw new Error('Language update is not available yet. Backend support is pending.')
 }
 
-export async function fetchSettings(): Promise<AdminSettingsState> {
+export async function fetchSettings(): Promise<never> {
   throw new Error('Settings are not available yet. Backend support is pending.')
 }
 
 export async function saveAllSettings(data: {
-  profile: AdminProfileForm
-  settings: AdminSettingsState
+  profile: { name: string; email: string }
 }) {
   if (!data.profile.name || !data.profile.name.trim()) {
     throw new Error('Name is required')

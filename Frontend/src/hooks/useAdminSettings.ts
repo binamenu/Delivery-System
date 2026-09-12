@@ -9,8 +9,6 @@ import type {
   AdminPasswordForm,
   AdminProfileForm,
   AdminSettingsState,
-  SessionTimeout,
-  AdminLanguage,
 } from '@/types/Settings'
 import { DEFAULT_ADMIN_SETTINGS } from '@/types/Settings'
 
@@ -35,8 +33,6 @@ export function useAdminSettings() {
     newPassword: '',
     confirmPassword: '',
   })
-  const [isSaving] = useState(false)
-  const [isSavingPassword] = useState(false)
 
   useEffect(() => {
     if (!user) {
@@ -105,30 +101,27 @@ export function useAdminSettings() {
     toast.error('Two-factor authentication is not available yet. Backend support is pending.')
   }
 
-  const updateSessionTimeoutValue = async (minutes: SessionTimeout) => {
+  const updateSessionTimeoutValue = async (_minutes: number) => {
     toast.error('Session timeout update is not available yet. Backend support is pending.')
   }
 
-  const updateSystemControl = async (
-    key: keyof AdminSettingsState['system'],
-    value: boolean
-  ) => {
+  const updateSystemControl = async (_key: string, _value: boolean) => {
     toast.error('System controls update is not available yet. Backend support is pending.')
   }
 
-  const updatePlatform = async (platformData: AdminSettingsState['platform']) => {
+  const updatePlatform = async (_platformData: unknown) => {
     toast.error('Platform settings update is not available yet. Backend support is pending.')
   }
 
-  const updateNotifications = async (notificationsData: AdminSettingsState['notifications']) => {
+  const updateNotifications = async (_notificationsData: unknown) => {
     toast.error('Notification settings update is not available yet. Backend support is pending.')
   }
 
-  const updatePrivacy = async (privacyData: AdminSettingsState['privacy']) => {
+  const updatePrivacy = async (_privacyData: unknown) => {
     toast.error('Privacy settings update is not available yet. Backend support is pending.')
   }
 
-  const updateLanguageValue = async (language: AdminLanguage) => {
+  const updateLanguageValue = async (_language: string) => {
     toast.error('Language update is not available yet. Backend support is pending.')
   }
 
@@ -154,8 +147,8 @@ export function useAdminSettings() {
     setProfile,
     password,
     setPassword,
-    isSaving,
-    isSavingPassword,
+    isSaving: false,
+    isSavingPassword: false,
     savePassword,
     saveAll,
     handleLogout,
