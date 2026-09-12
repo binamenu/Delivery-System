@@ -73,7 +73,7 @@ export default function ForgotPasswordPage() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="you@example.com"
+                  placeholder={t('auth.placeholderEmail')}
                   aria-label={t('auth.email')}
                   className="h-11 rounded-full px-4 border-gray-200 focus:border-[#f05a24] focus:ring-[#f05a24] bg-white text-sm"
                   {...register('email')}

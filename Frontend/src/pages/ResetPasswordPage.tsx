@@ -97,7 +97,7 @@ export default function ResetPasswordPage() {
               <Input
                 id="password"
                 type={showPassword ? 'text' : 'password'}
-                placeholder="••••••••"
+                placeholder={t('auth.placeholderPasswordMin')}
                 aria-label={t('auth.newPassword')}
                 className="h-11 rounded-full px-4 border-gray-200 focus:border-[#f05a24] focus:ring-[#f05a24] bg-white text-sm"
                 {...register('password')}
@@ -131,7 +131,7 @@ export default function ResetPasswordPage() {
               <Input
                 id="password_confirmation"
                 type={showConfirmPassword ? 'text' : 'password'}
-                placeholder="••••••••"
+                placeholder={t('auth.placeholderConfirmPassword')}
                 aria-label={t('auth.confirmPassword')}
                 className="h-11 rounded-full px-4 border-gray-200 focus:border-[#f05a24] focus:ring-[#f05a24] bg-white text-sm"
                 {...register('password_confirmation')}

@@ -67,6 +67,7 @@
     "registerFailed": "ምዝገባ አልተሳካም",
     "forgotPasswordNotice": "የይለፍ ቃል መቀየሪያ መመሪያዎችን ከአስተዳዳሪዎ ወይም በኢሜይል ያገኛሉ።",
     "termsNotice": "ውሎች እና ሁኔታዎች እንዲሁም የግላዊነት ፖሊሲ ዝርዝሮች በጠያቂነት ይቀርባሉ።",
+    "privacyNotice": "የግላዊነት ፖሊሲ ዝርዝሮች በጠያቂነት ይቀርባሉ።",
     "forgotPasswordTitle": "የይለፍ ቃልዎን ያድሱ",
     "forgotPasswordSubtitle": "የኢሜይል አድራሻዎን ያስገቡ እና የይለፍ ቃል ማደሻ አገናኝ እንልክልዎታለን።",
     "sendResetLink": "የማደሻ አገናኝ ላክ",
@@ -85,7 +86,16 @@
     "feature2": "ትዕዛዝዎን በቀጥታ ይከታተሉ",
     "feature3": "ከ 25 – 45 ደቂቃዎች ውስጥ ይደርሳል",
     "feature4": "ገቢ ማግኘት ይፈልጋሉ? ከመገለጫዎ የአሽከርካሪነት ያመልክቱ",
-    "feature5": "ምግብ ቤት አለዎት? ከመገለጫዎ ይመዝገቡት"
+    "feature5": "ምግብ ቤት አለዎት? ከመገለጫዎ ይመዝገቡት",
+    "placeholderEmailOrUsername": "you@example.com",
+    "placeholderPassword": "የይለፍ ቃልዎን ያስገቡ",
+    "placeholderPasswordMin": "ቢያንስ 8 ቁምፊዎች",
+    "placeholderConfirmPassword": "የይለፍ ቃሉን ይድገሙ",
+    "placeholderFullName": "ትግስት ኃይሌ",
+    "placeholderUsername": "የተጠቃሚ ስም ይምረጡ",
+    "placeholderEmail": "you@example.com",
+    "placeholderPhone": "0912345678",
+    "termsComingSoon": "ውሎች እና ሁኔታዎች እንዲሁም የግላዊነት ፖሊሲ ዝርዝሮች በጠያቂነት ይቀርባሉ።"
   },
   "dashboard": {
     "title": "ዴሽቦርድ",

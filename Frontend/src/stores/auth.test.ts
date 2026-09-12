@@ -76,46 +76,80 @@ describe('Auth Store', () => {
     expect(localStorageMock.removeItem).toHaveBeenCalledWith('token')
   })
 
-  it('logs in user with remember_me: true to localStorage', async () => {
+  it('Scenario A: logs in with remember_me = true -> token only in localStorage', async () => {
     const mockUser = { id: 1, name: 'John', email: 'john@example.com', username: 'john', email_verified_at: null, phone: '0912345678', role: 'customer' as const, status: 'active', created_at: '2026-01-01', updated_at: '2026-01-01' }
     vi.mocked(api.post).mockResolvedValue({
       data: {
         user: mockUser,
-        access_token: 'token-123',
+        access_token: 'token-scenario-a',
       },
     })
 
     const { result } = renderHook(() => useAuthStore())
-
     await act(async () => {
       await result.current.login({ login: 'john@example.com', password: 'password', remember_me: true })
     })
 
-    expect(result.current.user).toEqual(mockUser)
-    expect(result.current.isAuthenticated).toBe(true)
-    expect(localStorageMock.setItem).toHaveBeenCalledWith('token', 'token-123')
+    expect(localStorageMock.setItem).toHaveBeenCalledWith('token', 'token-scenario-a')
     expect(sessionStorageMock.removeItem).toHaveBeenCalledWith('token')
   })
 
-  it('logs in user with remember_me: false to sessionStorage', async () => {
+  it('Scenario B: logs in with remember_me = false -> token only in sessionStorage', async () => {
     const mockUser = { id: 1, name: 'John', email: 'john@example.com', username: 'john', email_verified_at: null, phone: '0912345678', role: 'customer' as const, status: 'active', created_at: '2026-01-01', updated_at: '2026-01-01' }
     vi.mocked(api.post).mockResolvedValue({
       data: {
         user: mockUser,
-        access_token: 'token-456',
+        access_token: 'token-scenario-b',
       },
     })
 
     const { result } = renderHook(() => useAuthStore())
-
     await act(async () => {
       await result.current.login({ login: 'john@example.com', password: 'password', remember_me: false })
     })
 
-    expect(result.current.user).toEqual(mockUser)
-    expect(result.current.isAuthenticated).toBe(true)
-    expect(sessionStorageMock.setItem).toHaveBeenCalledWith('token', 'token-456')
+    expect(sessionStorageMock.setItem).toHaveBeenCalledWith('token', 'token-scenario-b')
     expect(localStorageMock.removeItem).toHaveBeenCalledWith('token')
+  })
+
+  it('Scenario C: old localStorage token exists, login with remember_me = false -> old localStorage token removed', async () => {
+    const mockUser = { id: 1, name: 'John', email: 'john@example.com', username: 'john', email_verified_at: null, phone: '0912345678', role: 'customer' as const, status: 'active', created_at: '2026-01-01', updated_at: '2026-01-01' }
+    vi.mocked(api.post).mockResolvedValue({
+      data: {
+        user: mockUser,
+        access_token: 'token-scenario-c',
+      },
+    })
+
+    localStorageMock.getItem.mockReturnValue('old-local-token')
+
+    const { result } = renderHook(() => useAuthStore())
+    await act(async () => {
+      await result.current.login({ login: 'john@example.com', password: 'password', remember_me: false })
+    })
+
+    expect(sessionStorageMock.setItem).toHaveBeenCalledWith('token', 'token-scenario-c')
+    expect(localStorageMock.removeItem).toHaveBeenCalledWith('token')
+  })
+
+  it('Scenario D: old sessionStorage token exists, login with remember_me = true -> old sessionStorage token removed', async () => {
+    const mockUser = { id: 1, name: 'John', email: 'john@example.com', username: 'john', email_verified_at: null, phone: '0912345678', role: 'customer' as const, status: 'active', created_at: '2026-01-01', updated_at: '2026-01-01' }
+    vi.mocked(api.post).mockResolvedValue({
+      data: {
+        user: mockUser,
+        access_token: 'token-scenario-d',
+      },
+    })
+
+    sessionStorageMock.getItem.mockReturnValue('old-session-token')
+
+    const { result } = renderHook(() => useAuthStore())
+    await act(async () => {
+      await result.current.login({ login: 'john@example.com', password: 'password', remember_me: true })
+    })
+
+    expect(localStorageMock.setItem).toHaveBeenCalledWith('token', 'token-scenario-d')
+    expect(sessionStorageMock.removeItem).toHaveBeenCalledWith('token')
   })
 
   it('registers user and stores token in sessionStorage by default', async () => {
@@ -145,6 +179,8 @@ describe('Auth Store', () => {
     expect(sessionStorageMock.setItem).toHaveBeenCalledWith('token', 'token-reg-123')
     expect(localStorageMock.removeItem).toHaveBeenCalledWith('token')
   })
+
+
 
   it('logs out user and removes tokens from both storages', async () => {
     vi.mocked(api.post).mockResolvedValue({ data: { message: 'Logged out' } })

@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next'
 import { Eye, EyeOff, ChevronLeft } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth'
 import AuthBranding from '@/components/auth/AuthBranding'
+import { TermsModal } from '@/components/auth/TermsModal'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -18,6 +19,7 @@ export default function RegisterPage() {
   const { register: registerUser, isLoading } = useAuthStore()
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [modalConfig, setModalConfig] = useState<{ open: boolean; type: 'terms' | 'privacy' }>({ open: false, type: 'terms' })
 
   const registerSchema = z
     .object({
@@ -109,7 +111,7 @@ export default function RegisterPage() {
               <Input
                 id="name"
                 type="text"
-                placeholder="Tigist Haile"
+                placeholder={t('auth.placeholderFullName')}
                 aria-label={t('auth.fullName')}
                 className="h-11 rounded-full px-4 border-gray-200 focus:border-[#f05a24] focus:ring-[#f05a24] bg-white text-sm"
                 {...register('name')}
@@ -127,7 +129,7 @@ export default function RegisterPage() {
               <Input
                 id="username"
                 type="text"
-                placeholder="Choose a username"
+                placeholder={t('auth.placeholderUsername')}
                 aria-label={t('auth.username')}
                 className="h-11 rounded-full px-4 border-gray-200 focus:border-[#f05a24] focus:ring-[#f05a24] bg-white text-sm"
                 {...register('username')}
@@ -145,7 +147,7 @@ export default function RegisterPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="tigist@example.com"
+                placeholder={t('auth.placeholderEmail')}
                 aria-label={t('auth.email')}
                 className="h-11 rounded-full px-4 border-gray-200 focus:border-[#f05a24] focus:ring-[#f05a24] bg-white text-sm"
                 {...register('email')}
@@ -163,7 +165,7 @@ export default function RegisterPage() {
               <Input
                 id="phone"
                 type="tel"
-                placeholder="0912345678"
+                placeholder={t('auth.placeholderPhone')}
                 aria-label={t('auth.phone')}
                 className="h-11 rounded-full px-4 border-gray-200 focus:border-[#f05a24] focus:ring-[#f05a24] bg-white text-sm"
                 {...register('phone')}
@@ -181,7 +183,7 @@ export default function RegisterPage() {
               <Input
                 id="password"
                 type={showPassword ? 'text' : 'password'}
-                placeholder="Min. 8 characters"
+                placeholder={t('auth.placeholderPasswordMin')}
                 aria-label={t('auth.password')}
                 className="h-11 rounded-full px-4 border-gray-200 focus:border-[#f05a24] focus:ring-[#f05a24] bg-white text-sm"
                 {...register('password')}
@@ -218,7 +220,7 @@ export default function RegisterPage() {
               <Input
                 id="password_confirmation"
                 type={showConfirmPassword ? 'text' : 'password'}
-                placeholder="Repeat password"
+                placeholder={t('auth.placeholderConfirmPassword')}
                 aria-label={t('auth.confirmPassword')}
                 className="h-11 rounded-full px-4 border-gray-200 focus:border-[#f05a24] focus:ring-[#f05a24] bg-white text-sm"
                 {...register('password_confirmation')}
@@ -260,7 +262,7 @@ export default function RegisterPage() {
                   {t('auth.agreeTermsPrefix')}{' '}
                   <button
                     type="button"
-                    onClick={() => toast.info(t('auth.termsNotice'))}
+                    onClick={() => setModalConfig({ open: true, type: 'terms' })}
                     className="text-[#f05a24] font-semibold hover:underline cursor-pointer bg-transparent border-none p-0 inline"
                   >
                     {t('auth.termsAndConditions')}
@@ -268,7 +270,7 @@ export default function RegisterPage() {
                   {t('auth.and')}{' '}
                   <button
                     type="button"
-                    onClick={() => toast.info(t('auth.termsNotice'))}
+                    onClick={() => setModalConfig({ open: true, type: 'privacy' })}
                     className="text-[#f05a24] font-semibold hover:underline cursor-pointer bg-transparent border-none p-0 inline"
                   >
                     {t('auth.privacyPolicy')}
@@ -304,6 +306,11 @@ export default function RegisterPage() {
           </div>
         </div>
       </div>
+      <TermsModal
+        open={modalConfig.open}
+        type={modalConfig.type}
+        onClose={() => setModalConfig({ ...modalConfig, open: false })}
+      />
     </div>
   )
 }

@@ -67,6 +67,7 @@
     "registerFailed": "Registration failed",
     "forgotPasswordNotice": "Password reset instructions are available via your administrator or email.",
     "termsNotice": "Terms & Conditions and Privacy Policy are available upon request.",
+    "privacyNotice": "Privacy Policy is currently available upon request.",
     "forgotPasswordTitle": "Reset your password",
     "forgotPasswordSubtitle": "Enter your email address and we will send you a link to reset your password.",
     "sendResetLink": "Send Reset Link",
@@ -85,7 +86,16 @@
     "feature2": "Track your order in real-time",
     "feature3": "Delivered in 25 – 45 minutes",
     "feature4": "Want to earn? Apply as a driver from your profile",
-    "feature5": "Own a restaurant? Register it from your profile"
+    "feature5": "Own a restaurant? Register it from your profile",
+    "placeholderEmailOrUsername": "you@example.com",
+    "placeholderPassword": "Enter your password",
+    "placeholderPasswordMin": "Min. 8 characters",
+    "placeholderConfirmPassword": "Repeat password",
+    "placeholderFullName": "Tigist Haile",
+    "placeholderUsername": "Choose a username",
+    "placeholderEmail": "you@example.com",
+    "placeholderPhone": "0912345678",
+    "termsComingSoon": "Terms & Conditions and Privacy Policy are available upon request."
   },
   "dashboard": {
     "title": "Dashboard",

@@ -32,6 +32,9 @@ export default function LoginPage() {
     formState: { errors },
   } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
+    defaultValues: {
+      remember_me: false,
+    },
   })
 
   const onSubmit = async (data: LoginForm) => {
@@ -73,7 +76,7 @@ export default function LoginPage() {
               <Input
                 id="login"
                 type="text"
-                placeholder="you@example.com"
+                placeholder={t('auth.placeholderEmailOrUsername')}
                 aria-label={t('auth.emailOrUsername')}
                 className="h-11 rounded-full px-4 border-gray-200 focus:border-[#f05a24] focus:ring-[#f05a24] bg-white text-sm"
                 {...register('login')}
@@ -91,7 +94,7 @@ export default function LoginPage() {
               <Input
                 id="password"
                 type={showPassword ? 'text' : 'password'}
-                placeholder="Enter your password"
+                placeholder={t('auth.placeholderPassword')}
                 aria-label={t('auth.password')}
                 className="h-11 rounded-full px-4 border-gray-200 focus:border-[#f05a24] focus:ring-[#f05a24] bg-white text-sm"
                 {...register('password')}
