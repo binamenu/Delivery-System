@@ -1,5 +1,5 @@
-import axios from 'axios'
 import api from '@/lib/api'
+import { unwrapUser } from '@/lib/http'
 import type {
   AdminUser,
   RegisterDriverInput,
@@ -11,109 +11,135 @@ import type {
 interface UserApiRecord {
   id: number
   name: string
-  email: string
+  email?: string
   phone?: string
   role?: UserRole
   status?: UserStatus
   created_at?: string
-  createdAt?: string
-  vehicle_type?: string
-  vehicleType?: string
-  vehicle_model?: string
-  vehicleModel?: string
-  plate_number?: string
-  plateNumber?: string
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null
+const REGISTERED_USERS_KEY = 'admin-registered-users'
+
+function readRegisteredUsers(): AdminUser[] {
+  try {
+    const raw = localStorage.getItem(REGISTERED_USERS_KEY)
+    return raw ? (JSON.parse(raw) as AdminUser[]) : []
+  } catch {
+    return []
+  }
 }
 
-function unwrapList(payload: unknown): UserApiRecord[] {
-  if (Array.isArray(payload)) {
-    return payload as UserApiRecord[]
-  }
-
-  if (isRecord(payload) && Array.isArray(payload.data)) {
-    return payload.data as UserApiRecord[]
-  }
-
-  if (isRecord(payload) && isRecord(payload.data) && Array.isArray(payload.data.data)) {
-    return payload.data.data as UserApiRecord[]
-  }
-
-  return []
+function writeRegisteredUsers(users: AdminUser[]) {
+  localStorage.setItem(REGISTERED_USERS_KEY, JSON.stringify(users))
 }
 
-function unwrapUser(payload: unknown): UserApiRecord | null {
-  if (isRecord(payload) && isRecord(payload.data) && 'id' in payload.data) {
-    return payload.data as unknown as UserApiRecord
-  }
-
-  if (isRecord(payload) && 'id' in payload) {
-    return payload as unknown as UserApiRecord
-  }
-
-  return null
+export function cacheRegisteredUser(user: AdminUser) {
+  const current = readRegisteredUsers().filter((item) => item.id !== user.id)
+  writeRegisteredUsers([user, ...current])
 }
 
 export function mapUser(record: UserApiRecord): AdminUser {
   return {
     id: record.id,
     name: record.name,
-    email: record.email,
+    email: record.email ?? '',
     phone: record.phone ?? '',
     role: record.role ?? 'customer',
     status: record.status ?? 'active',
-    createdAt: record.created_at ?? record.createdAt ?? new Date().toISOString(),
-    vehicleType: record.vehicle_type ?? record.vehicleType,
-    vehicleModel: record.vehicle_model ?? record.vehicleModel,
-    plateNumber: record.plate_number ?? record.plateNumber,
+    createdAt: record.created_at ?? new Date().toISOString(),
   }
+}
+
+export function toLocalPhone(phone: string): string {
+  const digits = phone.replace(/\D/g, '')
+  if (/^09\d{8}$/.test(digits)) return digits
+  if (/^9\d{8}$/.test(digits)) return `0${digits}`
+  if (/^2519\d{8}$/.test(digits)) return `0${digits.slice(3)}`
+  return digits
+}
+
+function usernameFromEmail(email: string): string {
+  const base = email
+    .split('@')[0]
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_|_$/g, '')
+
+  return `${base || 'user'}_${Date.now().toString(36)}`
+}
+
+function generatePassword(): string {
+  return `Td${crypto.randomUUID().replace(/-/g, '').slice(0, 10)}A1`
+}
+
+function mergeUsers(users: AdminUser[]): AdminUser[] {
+  const byId = new Map<number, AdminUser>()
+  for (const user of users) {
+    const existing = byId.get(user.id)
+    byId.set(user.id, existing ? { ...existing, ...user } : user)
+  }
+  return Array.from(byId.values()).sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  )
+}
+
+async function registerAccount(input: {
+  name: string
+  email: string
+  phone: string
+}): Promise<AdminUser> {
+  const phone = toLocalPhone(input.phone)
+  if (!/^09\d{8}$/.test(phone)) {
+    throw new Error('Phone must be an Ethiopian number in 09xxxxxxxx format.')
+  }
+
+  const password = generatePassword()
+  const response = await api.post('/register', {
+    name: input.name.trim(),
+    email: input.email.trim(),
+    username: usernameFromEmail(input.email),
+    phone,
+    password,
+    password_confirmation: password,
+  })
+
+  const record = unwrapUser<UserApiRecord>(response.data)
+  if (!record) {
+    throw new Error('Register response was missing a user.')
+  }
+
+  const user = mapUser(record)
+  cacheRegisteredUser(user)
+  return user
 }
 
 export async function fetchUsers(): Promise<AdminUser[]> {
+  const collected: AdminUser[] = [...readRegisteredUsers()]
+
   try {
-    const response = await api.get('/users')
-    return unwrapList(response.data).map(mapUser)
-  } catch (error) {
-    if (axios.isAxiosError(error) && error.response?.status === 404) {
-      return []
-    }
-    throw error
+    const profileResponse = await api.get('/profile')
+    const profile = unwrapUser<UserApiRecord>(profileResponse.data)
+    if (profile) collected.push(mapUser(profile))
+  } catch {
+    // Profile can fail without blocking locally registered users.
   }
+
+  return mergeUsers(collected)
 }
 
-async function createUserOnApi(payload: Record<string, unknown>): Promise<AdminUser | null> {
-  try {
-    const response = await api.post('/users', payload)
-    const record = unwrapUser(response.data)
-    return record ? mapUser(record) : null
-  } catch (error) {
-    if (axios.isAxiosError(error) && (error.response?.status === 404 || error.response?.status === 405)) {
-      return null
-    }
-    throw error
+export async function createDriver(input: RegisterDriverInput): Promise<AdminUser> {
+  const user = await registerAccount(input)
+  const withVehicle = {
+    ...user,
+    vehicleType: input.vehicleType,
+    vehicleModel: input.vehicleModel,
+    plateNumber: input.plateNumber,
   }
+  cacheRegisteredUser(withVehicle)
+  return withVehicle
 }
 
-export async function createDriver(input: RegisterDriverInput): Promise<AdminUser | null> {
-  return createUserOnApi({
-    name: input.name,
-    email: input.email,
-    phone: input.phone,
-    role: 'driver',
-    vehicle_type: input.vehicleType,
-    vehicle_model: input.vehicleModel,
-    plate_number: input.plateNumber,
-  })
-}
-
-export async function createRestaurantManager(input: RegisterManagerInput): Promise<AdminUser | null> {
-  return createUserOnApi({
-    name: input.name,
-    email: input.email,
-    phone: input.phone,
-    role: 'restaurant_manager',
-  })
+export async function createRestaurantManager(input: RegisterManagerInput): Promise<AdminUser> {
+  return registerAccount(input)
 }

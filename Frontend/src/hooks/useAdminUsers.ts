@@ -6,69 +6,14 @@ import {
   createRestaurantManager,
   fetchUsers,
 } from '@/lib/usersApi'
+import { getApiErrorMessage } from '@/lib/http'
 import type {
   AdminUser,
   RegisterDriverInput,
   RegisterManagerInput,
-  UserStatus,
 } from '@/types/Users'
 
 const QUERY_KEY = ['users'] as const
-const LOCAL_USERS_KEY = 'admin-local-users'
-const STATUS_OVERRIDES_KEY = 'admin-user-status-overrides'
-
-function readJson<T>(key: string, fallback: T): T {
-  try {
-    const raw = sessionStorage.getItem(key)
-    return raw ? (JSON.parse(raw) as T) : fallback
-  } catch {
-    return fallback
-  }
-}
-
-function writeJson(key: string, value: unknown) {
-  sessionStorage.setItem(key, JSON.stringify(value))
-}
-
-function getErrorMessage(error: unknown): string {
-  if (
-    typeof error === 'object' &&
-    error !== null &&
-    'response' in error &&
-    typeof error.response === 'object' &&
-    error.response !== null &&
-    'data' in error.response &&
-    typeof error.response.data === 'object' &&
-    error.response.data !== null &&
-    'message' in error.response.data &&
-    typeof error.response.data.message === 'string'
-  ) {
-    return error.response.data.message
-  }
-
-  if (error instanceof Error) {
-    return error.message
-  }
-
-  return 'Something went wrong. Please try again.'
-}
-
-function mergeUsers(apiUsers: AdminUser[], localUsers: AdminUser[]): AdminUser[] {
-  const byId = new Map<number, AdminUser>()
-  const byEmail = new Map<string, AdminUser>()
-
-  for (const user of [...apiUsers, ...localUsers]) {
-    const emailKey = user.email.toLowerCase()
-    if (!byId.has(user.id) && !byEmail.has(emailKey)) {
-      byId.set(user.id, user)
-      byEmail.set(emailKey, user)
-    }
-  }
-
-  return Array.from(byId.values()).sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-  )
-}
 
 export function useAdminUsers() {
   const queryClient = useQueryClient()
@@ -77,35 +22,10 @@ export function useAdminUsers() {
     queryFn: fetchUsers,
     staleTime: 30_000,
   })
-  const [localUsers, setLocalUsers] = useState<AdminUser[]>(() => readJson(LOCAL_USERS_KEY, []))
-  const [statusOverrides, setStatusOverrides] = useState<Record<number, UserStatus>>(() =>
-    readJson(STATUS_OVERRIDES_KEY, {}),
-  )
   const [pendingId, setPendingId] = useState<number | null>(null)
   const [isCreating, setIsCreating] = useState(false)
 
-  const users = useMemo(() => {
-    return mergeUsers(query.data ?? [], localUsers).map((user) => ({
-      ...user,
-      status: statusOverrides[user.id] ?? user.status,
-    }))
-  }, [query.data, localUsers, statusOverrides])
-
-  const persistLocalUser = useCallback((user: AdminUser) => {
-    setLocalUsers((current) => {
-      const next = mergeUsers([], [...current, user])
-      writeJson(LOCAL_USERS_KEY, next)
-      return next
-    })
-  }, [])
-
-  const persistStatus = useCallback((id: number, status: UserStatus) => {
-    setStatusOverrides((current) => {
-      const next = { ...current, [id]: status }
-      writeJson(STATUS_OVERRIDES_KEY, next)
-      return next
-    })
-  }, [])
+  const users = useMemo(() => query.data ?? [], [query.data])
 
   const emailExists = useCallback(
     (email: string) => users.some((user) => user.email.toLowerCase() === email.toLowerCase()),
@@ -121,38 +41,25 @@ export function useAdminUsers() {
 
       setIsCreating(true)
       try {
-        const created = await createDriver(input)
-        const user: AdminUser = created ?? {
-          id: Date.now(),
-          name: input.name,
-          email: input.email,
-          phone: input.phone,
-          role: 'driver',
-          status: 'active',
-          createdAt: new Date().toISOString(),
-          vehicleType: input.vehicleType,
-          vehicleModel: input.vehicleModel,
-          plateNumber: input.plateNumber,
-        }
-
-        if (created) {
-          queryClient.setQueryData<AdminUser[]>(QUERY_KEY, (current) => mergeUsers(current ?? [], [user]))
-        } else {
-          persistLocalUser(user)
-        }
-
-        toast.success(`${user.name} was registered as a driver.`)
+        const user = await createDriver(input)
+        queryClient.setQueryData<AdminUser[]>(QUERY_KEY, (current) => {
+          const next = [...(current ?? []).filter((item) => item.id !== user.id), user]
+          return next.sort(
+            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+          )
+        })
+        toast.success(`${user.name} was registered.`)
       } catch (error) {
         if (error instanceof Error && error.message === 'duplicate-email') {
           throw error
         }
-        toast.error(getErrorMessage(error))
+        toast.error(getApiErrorMessage(error))
         throw error
       } finally {
         setIsCreating(false)
       }
     },
-    [emailExists, persistLocalUser, queryClient],
+    [emailExists, queryClient],
   )
 
   const registerManager = useCallback(
@@ -164,62 +71,44 @@ export function useAdminUsers() {
 
       setIsCreating(true)
       try {
-        const created = await createRestaurantManager(input)
-        const user: AdminUser = created ?? {
-          id: Date.now(),
-          name: input.name,
-          email: input.email,
-          phone: input.phone,
-          role: 'restaurant_manager',
-          status: 'active',
-          createdAt: new Date().toISOString(),
-        }
-
-        if (created) {
-          queryClient.setQueryData<AdminUser[]>(QUERY_KEY, (current) => mergeUsers(current ?? [], [user]))
-        } else {
-          persistLocalUser(user)
-        }
-
-        toast.success(`${user.name} was registered as a restaurant manager.`)
+        const user = await createRestaurantManager(input)
+        queryClient.setQueryData<AdminUser[]>(QUERY_KEY, (current) => {
+          const next = [...(current ?? []).filter((item) => item.id !== user.id), user]
+          return next.sort(
+            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+          )
+        })
+        toast.success(`${user.name} was registered.`)
       } catch (error) {
         if (error instanceof Error && error.message === 'duplicate-email') {
           throw error
         }
-        toast.error(getErrorMessage(error))
+        toast.error(getApiErrorMessage(error))
         throw error
       } finally {
         setIsCreating(false)
       }
     },
-    [emailExists, persistLocalUser, queryClient],
+    [emailExists, queryClient],
   )
 
-  const suspend = useCallback(
-    (user: AdminUser) => {
-      setPendingId(user.id)
-      persistStatus(user.id, 'suspended')
-      toast.success(`${user.name} was suspended.`)
-      setPendingId(null)
-    },
-    [persistStatus],
-  )
+  const suspend = useCallback((user: AdminUser) => {
+    setPendingId(user.id)
+    toast.error('User status cannot be changed. The API has no user suspend endpoint.')
+    setPendingId(null)
+  }, [])
 
-  const restore = useCallback(
-    (user: AdminUser) => {
-      setPendingId(user.id)
-      persistStatus(user.id, 'active')
-      toast.success(`${user.name} was restored.`)
-      setPendingId(null)
-    },
-    [persistStatus],
-  )
+  const restore = useCallback((user: AdminUser) => {
+    setPendingId(user.id)
+    toast.error('User status cannot be changed. The API has no user restore endpoint.')
+    setPendingId(null)
+  }, [])
 
   return {
     users,
     isLoading: query.isLoading,
     isError: query.isError,
-    errorMessage: query.error ? getErrorMessage(query.error) : null,
+    errorMessage: query.error ? getApiErrorMessage(query.error) : null,
     pendingId,
     isCreating,
     registerDriver,

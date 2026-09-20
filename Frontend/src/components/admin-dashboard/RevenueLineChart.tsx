@@ -3,37 +3,37 @@ export interface RevenueDataPoint {
   value: number
 }
 
-const DEFAULT_DATA: RevenueDataPoint[] = [
-  { month: 'Feb', value: 120_000 },
-  { month: 'Mar', value: 135_000 },
-  { month: 'Apr', value: 145_000 },
-  { month: 'May', value: 195_000 },
-  { month: 'Jun', value: 255_000 },
-  { month: 'Jul', value: 310_000 },
-  { month: 'Aug', value: 345_000 },
-]
-
-const Y_TICKS = [0, 90_000, 180_000, 270_000, 360_000]
 const CHART_HEIGHT = 220
 const CHART_WIDTH = 560
 const PADDING = { top: 12, right: 12, bottom: 32, left: 52 }
 
 function formatYAxis(value: number): string {
   if (value === 0) return '0'
-  return value.toLocaleString()
+  return Math.round(value).toLocaleString()
 }
 
 export interface RevenueLineChartProps {
   data?: RevenueDataPoint[]
 }
 
-export function RevenueLineChart({ data = DEFAULT_DATA }: RevenueLineChartProps) {
-  const maxValue = Y_TICKS[Y_TICKS.length - 1]
+export function RevenueLineChart({ data = [] }: RevenueLineChartProps) {
+  if (data.length === 0) {
+    return (
+      <div className="flex h-[220px] items-center justify-center text-sm text-muted-foreground">
+        No revenue data yet.
+      </div>
+    )
+  }
+
+  const maxRaw = Math.max(...data.map((point) => point.value), 0)
+  const maxValue = maxRaw === 0 ? 1 : maxRaw
+  const yTicks = [0, maxValue * 0.25, maxValue * 0.5, maxValue * 0.75, maxValue]
   const plotWidth = CHART_WIDTH - PADDING.left - PADDING.right
   const plotHeight = CHART_HEIGHT - PADDING.top - PADDING.bottom
+  const divisor = Math.max(data.length - 1, 1)
 
   const points = data.map((point, index) => {
-    const x = PADDING.left + (index / (data.length - 1)) * plotWidth
+    const x = PADDING.left + (index / divisor) * plotWidth
     const y = PADDING.top + plotHeight - (point.value / maxValue) * plotHeight
     return { ...point, x, y }
   })
@@ -49,7 +49,7 @@ export function RevenueLineChart({ data = DEFAULT_DATA }: RevenueLineChartProps)
         role="img"
         aria-label="Revenue over time line chart"
       >
-        {Y_TICKS.map((tick) => {
+        {yTicks.map((tick) => {
           const y = PADDING.top + plotHeight - (tick / maxValue) * plotHeight
           return (
             <g key={tick}>

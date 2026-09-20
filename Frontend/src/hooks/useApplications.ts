@@ -6,43 +6,10 @@ import {
   fetchApplications,
   rejectApplication,
 } from '@/lib/applicationsApi'
-import type { ApplicationStatus, RestaurantApplication } from '@/types/Applications'
+import { getApiErrorMessage } from '@/lib/http'
+import type { RestaurantApplication } from '@/types/Applications'
 
 const QUERY_KEY = ['applications'] as const
-const OVERRIDE_KEY = 'admin-application-status-overrides'
-
-function readOverrides(): Record<number, ApplicationStatus> {
-  try {
-    const raw = sessionStorage.getItem(OVERRIDE_KEY)
-    return raw ? (JSON.parse(raw) as Record<number, ApplicationStatus>) : {}
-  } catch {
-    return {}
-  }
-}
-
-function writeOverrides(overrides: Record<number, ApplicationStatus>) {
-  sessionStorage.setItem(OVERRIDE_KEY, JSON.stringify(overrides))
-}
-
-function getErrorMessage(error: unknown): string {
-  if (
-    typeof error === 'object' &&
-    error !== null &&
-    'response' in error &&
-    typeof error.response === 'object' &&
-    error.response !== null &&
-    'data' in error.response &&
-    typeof error.response.data === 'object' &&
-    error.response.data !== null &&
-    'message' in error.response.data &&
-    typeof error.response.data.message === 'string'
-  ) {
-    return error.response.data.message
-  }
-
-  if (error instanceof Error) return error.message
-  return 'Something went wrong. Please try again.'
-}
 
 export function useApplications() {
   const queryClient = useQueryClient()
@@ -51,17 +18,9 @@ export function useApplications() {
     queryFn: fetchApplications,
     staleTime: 30_000,
   })
-  const [overrides, setOverrides] = useState<Record<number, ApplicationStatus>>(readOverrides)
   const [pendingId, setPendingId] = useState<number | null>(null)
 
-  const applications = useMemo(() => {
-    return (query.data ?? [])
-      .map((item) => ({
-        ...item,
-        status: overrides[item.id] ?? item.status,
-      }))
-      .filter((item) => item.status === 'pending' || item.status === 'rejected')
-  }, [query.data, overrides])
+  const applications = useMemo(() => query.data ?? [], [query.data])
 
   const stats = useMemo(
     () => ({
@@ -71,29 +30,23 @@ export function useApplications() {
     [applications],
   )
 
-  const persistStatus = useCallback((id: number, status: ApplicationStatus) => {
-    setOverrides((current) => {
-      const next = { ...current, [id]: status }
-      writeOverrides(next)
-      return next
-    })
-  }, [])
-
   const approve = useCallback(
     async (application: RestaurantApplication) => {
       setPendingId(application.id)
       try {
         await approveApplication(application.id)
-        queryClient.invalidateQueries({ queryKey: ['restaurants'] })
-      } catch {
-        // Public restaurant list may omit pending rows; keep the review action on the page.
-      } finally {
-        persistStatus(application.id, 'approved')
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ['restaurants'] }),
+          queryClient.invalidateQueries({ queryKey: QUERY_KEY }),
+        ])
         toast.success(`${application.name} was approved.`)
+      } catch (error) {
+        toast.error(getApiErrorMessage(error))
+      } finally {
         setPendingId(null)
       }
     },
-    [persistStatus, queryClient],
+    [queryClient],
   )
 
   const reject = useCallback(
@@ -101,31 +54,30 @@ export function useApplications() {
       setPendingId(application.id)
       try {
         await rejectApplication(application.id)
-      } catch {
-        // Keep reject available when the admin applications endpoint is not wired yet.
-      } finally {
-        persistStatus(application.id, 'rejected')
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ['restaurants'] }),
+          queryClient.invalidateQueries({ queryKey: QUERY_KEY }),
+        ])
         toast.success(`${application.name} was rejected.`)
+      } catch (error) {
+        toast.error(getApiErrorMessage(error))
+      } finally {
         setPendingId(null)
       }
     },
-    [persistStatus],
+    [queryClient],
   )
 
-  const reset = useCallback(
-    (application: RestaurantApplication) => {
-      persistStatus(application.id, 'pending')
-      toast.success(`${application.name} was reset to pending.`)
-    },
-    [persistStatus],
-  )
+  const reset = useCallback((application: RestaurantApplication) => {
+    toast.error(`Cannot reset ${application.name}. The API has no pending-status endpoint.`)
+  }, [])
 
   return {
     applications,
     stats,
     isLoading: query.isLoading,
     isError: query.isError,
-    errorMessage: query.error ? getErrorMessage(query.error) : null,
+    errorMessage: query.error ? getApiErrorMessage(query.error) : null,
     pendingId,
     approve,
     reject,

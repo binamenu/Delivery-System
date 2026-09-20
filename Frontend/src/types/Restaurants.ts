@@ -12,6 +12,8 @@ export interface Restaurant {
   approvalStatus: RestaurantApprovalStatus
   operationalStatus: RestaurantOperationalStatus
   createdAt: string
+  address?: string
+  phone?: string
 }
 
 export interface RestaurantsQueryParams {

@@ -9,7 +9,11 @@ import { VEHICLE_TYPE_OPTIONS } from './userConfig'
 const driverSchema = z.object({
   name: z.string().trim().min(1, 'Full name is required'),
   email: z.string().trim().email('Enter a valid email address'),
-  phone: z.string().trim().min(1, 'Phone number is required'),
+  phone: z
+    .string()
+    .trim()
+    .min(1, 'Phone number is required')
+    .regex(/^(09\d{8}|\+?2519\d{8}|9\d{8})$/, 'Use 09xxxxxxxx format'),
   vehicleType: z.string().min(1, 'Select a vehicle type'),
   vehicleModel: z.string().trim().min(1, 'Vehicle model is required'),
   plateNumber: z.string().trim().min(1, 'Plate number is required'),

@@ -33,17 +33,23 @@ export function PendingApprovalsCard({
       </div>
 
       <div>
-        {items.map((item) => (
-          <ApprovalListItem
-            key={item.id}
-            name={item.name}
-            owner={item.owner}
-            category={item.category}
-            avatarInitial={item.avatarInitial}
-            onApprove={() => onApprove?.(item.id)}
-            onReject={() => onReject?.(item.id)}
-          />
-        ))}
+        {items.length === 0 ? (
+          <p className="py-8 text-center text-sm text-muted-foreground">
+            No pending restaurant approvals.
+          </p>
+        ) : (
+          items.map((item) => (
+            <ApprovalListItem
+              key={item.id}
+              name={item.name}
+              owner={item.owner}
+              category={item.category}
+              avatarInitial={item.avatarInitial}
+              onApprove={() => onApprove?.(item.id)}
+              onReject={() => onReject?.(item.id)}
+            />
+          ))
+        )}
       </div>
     </div>
   )

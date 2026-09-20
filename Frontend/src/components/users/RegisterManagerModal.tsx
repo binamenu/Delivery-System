@@ -8,7 +8,11 @@ import { UserFormField } from './UserFormField'
 const managerSchema = z.object({
   name: z.string().trim().min(1, 'Full name is required'),
   email: z.string().trim().email('Enter a valid email address'),
-  phone: z.string().trim().min(1, 'Phone number is required'),
+  phone: z
+    .string()
+    .trim()
+    .min(1, 'Phone number is required')
+    .regex(/^(09\d{8}|\+?2519\d{8}|9\d{8})$/, 'Use 09xxxxxxxx format'),
 })
 
 export interface RegisterManagerModalProps {

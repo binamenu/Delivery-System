@@ -7,7 +7,6 @@ import { useTheme } from '@/hooks/useTheme'
 import { loadAdminSettings, clearSettingsCache } from '@/lib/settingsStorage'
 import { 
   updateAdminPassword, 
-  updateAdminProfile,
   updateTwoFactorStatus,
   updateSessionTimeout,
   updateSystemControls,
@@ -144,24 +143,14 @@ export function useAdminSettings() {
 
     setIsSaving(true)
     try {
-
-      try {
-        await updateAdminProfile(profile)
-        await getProfile().catch(() => {})
-      } catch (profileError) {
-      
-        toast.warning('Profile update failed, but continuing with other settings.')
-        console.error('Profile update error:', profileError)
-      }
-
       await saveAllSettings({
         profile,
-        settings
+        settings,
       })
-      
+
       await i18n.changeLanguage(settings.language)
-      
-      toast.success('All settings saved successfully.')
+
+      toast.success('Settings saved on this device. Password changes use PUT /change-password.')
     } catch (error) {
       toast.error(getErrorMessage(error))
       console.error('Save all error:', error)

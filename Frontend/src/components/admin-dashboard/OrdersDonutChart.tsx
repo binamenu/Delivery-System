@@ -4,13 +4,6 @@ export interface OrderStatusSegment {
   color: string
 }
 
-const DEFAULT_SEGMENTS: OrderStatusSegment[] = [
-  { label: 'Delivered', value: 42, color: '#14B8A6' },
-  { label: 'Preparing', value: 28, color: '#F97316' },
-  { label: 'Pending', value: 18, color: '#3B82F6' },
-  { label: 'Cancelled', value: 12, color: '#EF4444' },
-]
-
 const SIZE = 160
 const STROKE = 28
 const RADIUS = (SIZE - STROKE) / 2
@@ -21,7 +14,7 @@ export interface OrdersDonutChartProps {
   segments?: OrderStatusSegment[]
 }
 
-export function OrdersDonutChart({ segments = DEFAULT_SEGMENTS }: OrdersDonutChartProps) {
+export function OrdersDonutChart({ segments = [] }: OrdersDonutChartProps) {
   const total = segments.reduce((sum, segment) => sum + segment.value, 0)
   let offset = 0
 
@@ -34,27 +27,38 @@ export function OrdersDonutChart({ segments = DEFAULT_SEGMENTS }: OrdersDonutCha
         aria-label="Orders by status donut chart"
       >
         <g transform={`rotate(-90 ${CENTER} ${CENTER})`}>
-          {segments.map((segment) => {
-            const length = (segment.value / total) * CIRCUMFERENCE
-            const dashArray = `${length} ${CIRCUMFERENCE - length}`
-            const dashOffset = -offset
-            offset += length
+          {total === 0 ? (
+            <circle
+              cx={CENTER}
+              cy={CENTER}
+              r={RADIUS}
+              fill="none"
+              stroke="#E5E7EB"
+              strokeWidth={STROKE}
+            />
+          ) : (
+            segments.map((segment) => {
+              const length = (segment.value / total) * CIRCUMFERENCE
+              const dashArray = `${length} ${CIRCUMFERENCE - length}`
+              const dashOffset = -offset
+              offset += length
 
-            return (
-              <circle
-                key={segment.label}
-                cx={CENTER}
-                cy={CENTER}
-                r={RADIUS}
-                fill="none"
-                stroke={segment.color}
-                strokeWidth={STROKE}
-                strokeDasharray={dashArray}
-                strokeDashoffset={dashOffset}
-                strokeLinecap="butt"
-              />
-            )
-          })}
+              return (
+                <circle
+                  key={segment.label}
+                  cx={CENTER}
+                  cy={CENTER}
+                  r={RADIUS}
+                  fill="none"
+                  stroke={segment.color}
+                  strokeWidth={STROKE}
+                  strokeDasharray={dashArray}
+                  strokeDashoffset={dashOffset}
+                  strokeLinecap="butt"
+                />
+              )
+            })
+          )}
         </g>
       </svg>
 
@@ -65,7 +69,9 @@ export function OrdersDonutChart({ segments = DEFAULT_SEGMENTS }: OrdersDonutCha
               className="h-2.5 w-2.5 rounded-full"
               style={{ backgroundColor: segment.color }}
             />
-            <span className="text-xs text-gray-500">{segment.label}</span>
+            <span className="text-xs text-gray-500">
+              {segment.label} ({segment.value})
+            </span>
           </div>
         ))}
       </div>
