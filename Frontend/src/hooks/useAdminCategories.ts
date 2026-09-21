@@ -33,20 +33,26 @@ function withRestaurantCounts(
 
 export function useAdminCategories() {
   const queryClient = useQueryClient()
+
   const query = useQuery({
     queryKey: QUERY_KEY,
     queryFn: fetchCategories,
     staleTime: 30_000,
   })
+
   const restaurantsQuery = useQuery({
     queryKey: ['restaurants'],
     queryFn: fetchRestaurants,
     staleTime: 30_000,
   })
+
   const [isSaving, setIsSaving] = useState(false)
 
   const restaurantCategories = useMemo(
-    () => (restaurantsQuery.data ?? []).map((restaurant) => restaurant.category).filter(Boolean),
+    () =>
+      (restaurantsQuery.data ?? [])
+        .map((restaurant) => restaurant.category)
+        .filter(Boolean),
     [restaurantsQuery.data],
   )
 
@@ -59,7 +65,8 @@ export function useAdminCategories() {
     (name: string, excludeId?: number) =>
       categories.some(
         (category) =>
-          category.id !== excludeId && category.name.toLowerCase() === name.trim().toLowerCase(),
+          category.id !== excludeId &&
+          category.name.toLowerCase() === name.trim().toLowerCase(),
       ),
     [categories],
   )
@@ -72,17 +79,23 @@ export function useAdminCategories() {
       }
 
       setIsSaving(true)
+
       try {
         const category = await createCategory(input)
+
         queryClient.setQueryData<FoodCategory[]>(QUERY_KEY, (current) =>
-          [...(current ?? []).filter((item) => item.id !== category.id), category].sort((a, b) =>
-            a.name.localeCompare(b.name),
+          [...(current ?? []).filter((item) => item.id !== category.id), category].sort(
+            (a, b) => a.name.localeCompare(b.name),
           ),
         )
+
         await queryClient.invalidateQueries({ queryKey: QUERY_KEY })
         toast.success(`${category.name} was added.`)
       } catch (error) {
-        if (error instanceof Error && error.message === 'duplicate-name') throw error
+        if (error instanceof Error && error.message === 'duplicate-name') {
+          throw error
+        }
+
         toast.error(getApiErrorMessage(error))
         throw error
       } finally {
@@ -100,15 +113,21 @@ export function useAdminCategories() {
       }
 
       setIsSaving(true)
+
       try {
         const next = await updateCategory(id, input)
+
         queryClient.setQueryData<FoodCategory[]>(QUERY_KEY, (current) =>
           (current ?? []).map((item) => (item.id === id ? next : item)),
         )
+
         await queryClient.invalidateQueries({ queryKey: QUERY_KEY })
         toast.success(`${next.name} was updated.`)
       } catch (error) {
-        if (error instanceof Error && error.message === 'duplicate-name') throw error
+        if (error instanceof Error && error.message === 'duplicate-name') {
+          throw error
+        }
+
         toast.error(getApiErrorMessage(error))
         throw error
       } finally {
@@ -121,11 +140,14 @@ export function useAdminCategories() {
   const removeCategory = useCallback(
     async (category: FoodCategory) => {
       setIsSaving(true)
+
       try {
         await deleteCategory(category.id)
+
         queryClient.setQueryData<FoodCategory[]>(QUERY_KEY, (current) =>
           (current ?? []).filter((item) => item.id !== category.id),
         )
+
         await queryClient.invalidateQueries({ queryKey: QUERY_KEY })
         toast.success(`${category.name} was deleted.`)
       } catch (error) {

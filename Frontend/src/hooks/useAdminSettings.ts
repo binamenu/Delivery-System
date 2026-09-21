@@ -2,44 +2,20 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { useNavigate } from 'react-router-dom'
+
 import { useAuthStore } from '@/stores/auth'
 import { useTheme } from '@/hooks/useTheme'
-import { loadAdminSettings, clearSettingsCache } from '@/lib/settingsStorage'
-import { 
-  updateAdminPassword, 
-  updateTwoFactorStatus,
-  updateSessionTimeout,
-  updateSystemControls,
-  updatePlatformSettings,
-  updateNotificationSettings,
-  updatePrivacySettings,
-  updateLanguage,
-  saveAllSettings
-} from '@/lib/settingsApi'
+import { clearSettingsCache } from '@/lib/settingsStorage'
+import { saveAllSettings } from '@/lib/settingsApi'
+
 import type {
   AdminPasswordForm,
   AdminProfileForm,
   AdminSettingsState,
-  SessionTimeout,
-  AdminLanguage,
 } from '@/types/Settings'
+import { DEFAULT_ADMIN_SETTINGS } from '@/types/Settings'
 
 function getErrorMessage(error: unknown): string {
-  if (
-    typeof error === 'object' &&
-    error !== null &&
-    'response' in error &&
-    typeof error.response === 'object' &&
-    error.response !== null &&
-    'data' in error.response &&
-    typeof error.response.data === 'object' &&
-    error.response.data !== null &&
-    'message' in error.response.data &&
-    typeof error.response.data.message === 'string'
-  ) {
-    return error.response.data.message
-  }
-
   if (error instanceof Error) return error.message
   return 'Something went wrong. Please try again.'
 }
@@ -49,19 +25,23 @@ export function useAdminSettings() {
   const { i18n } = useTranslation()
   const { theme, setTheme } = useTheme()
   const { user, getProfile, logout } = useAuthStore()
-  const [settings, setSettings] = useState<AdminSettingsState>(loadAdminSettings)
+
+  const [settings, setSettings] =
+    useState<AdminSettingsState>(DEFAULT_ADMIN_SETTINGS)
+
   const [profile, setProfile] = useState<AdminProfileForm>({
     name: '',
     email: '',
     phone: '',
   })
+
   const [password, setPassword] = useState<AdminPasswordForm>({
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
   })
+
   const [isSaving, setIsSaving] = useState(false)
-  const [isSavingPassword, setIsSavingPassword] = useState(false)
 
   useEffect(() => {
     if (!user) {
@@ -94,7 +74,7 @@ export function useAdminSettings() {
       toast.error('Current password is required.')
       return
     }
-    
+
     if (!password.newPassword) {
       toast.error('New password is required.')
       return
@@ -104,44 +84,35 @@ export function useAdminSettings() {
       toast.error('New password must be at least 8 characters.')
       return
     }
-    
+
     if (password.newPassword !== password.confirmPassword) {
       toast.error('New passwords do not match.')
       return
     }
 
-    setIsSavingPassword(true)
-    try {
-      await updateAdminPassword(password)
-      setPassword({ currentPassword: '', newPassword: '', confirmPassword: '' })
-      toast.success('Password updated successfully.')
-    } catch (error) {
-      toast.error(getErrorMessage(error))
-      console.error('Password update error:', error)
-    } finally {
-      setIsSavingPassword(false)
-    }
+    toast.error('Password change is not available yet. Backend support is pending.')
   }
 
   const saveAll = async () => {
-    // Validate profile fields
     if (!profile.name?.trim()) {
       toast.warning('Name is required.')
       return
     }
-    
+
     if (!profile.email?.trim()) {
       toast.warning('Email is required.')
       return
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
     if (!emailRegex.test(profile.email)) {
       toast.warning('Please enter a valid email address.')
       return
     }
 
     setIsSaving(true)
+
     try {
       await saveAllSettings({
         profile,
@@ -150,7 +121,9 @@ export function useAdminSettings() {
 
       await i18n.changeLanguage(settings.language)
 
-      toast.success('Settings saved on this device. Password changes use PUT /change-password.')
+      toast.success(
+        'Settings saved on this device. Password changes use PUT /change-password.',
+      )
     } catch (error) {
       toast.error(getErrorMessage(error))
       console.error('Save all error:', error)
@@ -159,109 +132,54 @@ export function useAdminSettings() {
     }
   }
 
-  // Handle 2FA toggle with API call
   const toggleTwoFactor = async () => {
-    const newValue = !settings.privacy.twoFactorEnabled
-    try {
-      const result = await updateTwoFactorStatus(newValue)
-      updateSettings('privacy', {
-        ...settings.privacy,
-        twoFactorEnabled: result.enabled ?? newValue,
-      })
-      toast.success(`2FA ${newValue ? 'enabled' : 'disabled'} successfully.`)
-    } catch (error) {
-      toast.error(getErrorMessage(error))
-      console.error('2FA toggle error:', error)
-    }
+    toast.error(
+      'Two-factor authentication is not available yet. Backend support is pending.',
+    )
   }
 
-  // Handle session timeout change with API call
-  const updateSessionTimeoutValue = async (minutes: SessionTimeout) => {
-    try {
-      await updateSessionTimeout(minutes)
-      updateSettings('privacy', {
-        ...settings.privacy,
-        sessionTimeoutMinutes: minutes,
-      })
-      toast.success(`Session timeout set to ${minutes} minutes.`)
-    } catch (error) {
-      toast.error(getErrorMessage(error))
-      console.error('Session timeout update error:', error)
-    }
+  const updateSessionTimeoutValue = async (_minutes: number) => {
+    toast.error(
+      'Session timeout update is not available yet. Backend support is pending.',
+    )
   }
 
-  // Handle system control changes with API call
   const updateSystemControl = async (
-    key: keyof AdminSettingsState['system'],
-    value: boolean
+    _key: string,
+    _value: boolean,
   ) => {
-    try {
-      const updatedSystem = {
-        ...settings.system,
-        [key]: value,
-      }
-      const result = await updateSystemControls(updatedSystem)
-      updateSettings('system', result)
-      toast.success(`${key} updated successfully.`)
-    } catch (error) {
-      toast.error(getErrorMessage(error))
-      console.error('System control update error:', error)
-    }
+    toast.error(
+      'System controls update is not available yet. Backend support is pending.',
+    )
   }
 
-  // Handle platform settings update with API call
-  const updatePlatform = async (platformData: AdminSettingsState['platform']) => {
-    try {
-      const result = await updatePlatformSettings(platformData)
-      updateSettings('platform', result)
-      toast.success('Platform settings updated successfully.')
-    } catch (error) {
-      toast.error(getErrorMessage(error))
-      console.error('Platform update error:', error)
-    }
+  const updatePlatform = async (_platformData: unknown) => {
+    toast.error(
+      'Platform settings update is not available yet. Backend support is pending.',
+    )
   }
 
-  // Handle notification settings update with API call
-  const updateNotifications = async (notificationsData: AdminSettingsState['notifications']) => {
-    try {
-      const result = await updateNotificationSettings(notificationsData)
-      updateSettings('notifications', result)
-      toast.success('Notification settings updated successfully.')
-    } catch (error) {
-      toast.error(getErrorMessage(error))
-      console.error('Notifications update error:', error)
-    }
+  const updateNotifications = async (_notificationsData: unknown) => {
+    toast.error(
+      'Notification settings update is not available yet. Backend support is pending.',
+    )
   }
 
-  // Handle privacy settings update with API call
-  const updatePrivacy = async (privacyData: AdminSettingsState['privacy']) => {
-    try {
-      const result = await updatePrivacySettings(privacyData)
-      updateSettings('privacy', result)
-      toast.success('Privacy settings updated successfully.')
-    } catch (error) {
-      toast.error(getErrorMessage(error))
-      console.error('Privacy update error:', error)
-    }
+  const updatePrivacy = async (_privacyData: unknown) => {
+    toast.error(
+      'Privacy settings update is not available yet. Backend support is pending.',
+    )
   }
 
-  // Handle language update with API call
-  const updateLanguageValue = async (language: AdminLanguage) => {
-    try {
-      await updateLanguage(language)
-      updateSettings('language', language)
-      await i18n.changeLanguage(language)
-      toast.success('Language updated successfully.')
-    } catch (error) {
-      toast.error(getErrorMessage(error))
-      console.error('Language update error:', error)
-    }
+  const updateLanguageValue = async (_language: string) => {
+    toast.error(
+      'Language update is not available yet. Backend support is pending.',
+    )
   }
 
-  // Handle logout with cache clearing
   const handleLogout = async () => {
     try {
-      clearSettingsCache() 
+      clearSettingsCache()
       await logout()
       navigate('/login')
       toast.success('Logged out successfully.')
@@ -282,11 +200,10 @@ export function useAdminSettings() {
     password,
     setPassword,
     isSaving,
-    isSavingPassword,
+    isSavingPassword: false,
     savePassword,
     saveAll,
     handleLogout,
-    // New functions for individual updates
     toggleTwoFactor,
     updateSessionTimeout: updateSessionTimeoutValue,
     updateSystemControl,

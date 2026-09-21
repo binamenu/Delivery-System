@@ -7,6 +7,8 @@ import ErrorBoundary from '@/components/ErrorBoundary'
 // Auth pages
 import LoginPage from '@/pages/LoginPage'
 import RegisterPage from '@/pages/RegisterPage'
+import ForgotPasswordPage from '@/pages/ForgotPasswordPage'
+import ResetPasswordPage from '@/pages/ResetPasswordPage'
 import NotFoundPage from '@/pages/NotFoundPage'
 
 // Admin / shared pages
@@ -78,6 +80,22 @@ export default function App() {
               element={
                 <GuestRoute>
                   <RegisterPage />
+                </GuestRoute>
+              }
+            />
+            <Route
+              path="/forgot-password"
+              element={
+                <GuestRoute>
+                  <ForgotPasswordPage />
+                </GuestRoute>
+              }
+            />
+            <Route
+              path="/reset-password"
+              element={
+                <GuestRoute>
+                  <ResetPasswordPage />
                 </GuestRoute>
               }
             />

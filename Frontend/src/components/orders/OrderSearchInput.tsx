@@ -8,7 +8,7 @@ export interface OrderSearchInputProps {
   className?: string
 }
 
-export function OrderSearchInput({ value, onChange, className }: OrderSearchInputProps) {
+export default function OrderSearchInput({ value, onChange, className }: OrderSearchInputProps) {
   return (
     <div className={cn('relative w-full lg:max-w-md', className)}>
       <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
