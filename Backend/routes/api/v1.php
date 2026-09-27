@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\V1\CartController;
 use App\Http\Controllers\Api\V1\OrderController;
 use App\Http\Controllers\Api\V1\RestaurantController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\V1\AdminUserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -140,14 +141,24 @@ Route::middleware('role:admin')->group(function (): void {
 
     // Admin restaurant routes
     Route::middleware('role:admin')->group(function (): void {
+    Route::patch(
+        'restaurants/{restaurant}/approval-status',
+        [RestaurantController::class, 'updateApprovalStatus']
+    )->name('api.v1.restaurants.approval-status');
 
-        Route::patch(
-            'restaurants/{restaurant}/approval-status',
-            [RestaurantController::class, 'updateApprovalStatus']
-        )->name('api.v1.restaurants.approval-status');
+    Route::delete('restaurants/{restaurant}', [RestaurantController::class, 'destroy'])
+        ->name('api.v1.restaurants.destroy');
 
-        Route::delete('restaurants/{restaurant}', [RestaurantController::class, 'destroy'])
-            ->name('api.v1.restaurants.destroy');
+    Route::post(
+        'admin/users/drivers',
+        [AdminUserController::class, 'createDriver']
+    )->name('api.v1.admin.users.drivers');
+
+    Route::post(
+        'admin/users/restaurant-managers',
+        [AdminUserController::class, 'createRestaurantManager']
+    )->name('api.v1.admin.users.restaurant-managers');
+});
 
              // Category routes
         Route::post('categories', [CategoryController::class, 'store'])
@@ -159,7 +170,6 @@ Route::middleware('role:admin')->group(function (): void {
         Route::delete('categories/{category}', [CategoryController::class, 'destroy'])
         ->name('api.v1.categories.destroy');
     });
-});
 
 // Password reset routes (public with rate limiting)
 Route::middleware('throttle:6,1')->group(function (): void {

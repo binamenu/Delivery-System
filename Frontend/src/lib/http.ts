@@ -30,7 +30,11 @@ export function unwrapList<T>(payload: unknown): T[] {
     return payload.data as T[]
   }
 
-  if (isRecord(payload) && isRecord(payload.data) && Array.isArray(payload.data.data)) {
+  if (
+    isRecord(payload) &&
+    isRecord(payload.data) &&
+    Array.isArray(payload.data.data)
+  ) {
     return payload.data.data as T[]
   }
 
@@ -38,15 +42,67 @@ export function unwrapList<T>(payload: unknown): T[] {
 }
 
 export function unwrapUser<T extends object>(payload: unknown): T | null {
+  // Handles:
+  // { data: { id: ... } }
+  // { id: ... }
+  // { data: { data: { id: ... } } }
   const fromRecord = unwrapRecord<T>(payload)
-  if (fromRecord) return fromRecord
 
+  if (fromRecord) {
+    return fromRecord
+  }
+
+  // Handles registration responses such as:
+  // {
+  //   user: {
+  //     id: 4,
+  //     name: "...",
+  //     ...
+  //   },
+  //   temporary_password: "..."
+  // }
+  if (
+    isRecord(payload) &&
+    isRecord(payload.user) &&
+    'id' in payload.user
+  ) {
+    return payload.user as T
+  }
+
+  // Handles:
+  // {
+  //   user: {
+  //     data: {
+  //       id: ...
+  //     }
+  //   }
+  // }
+  if (
+    isRecord(payload) &&
+    isRecord(payload.user) &&
+    isRecord(payload.user.data) &&
+    'id' in payload.user.data
+  ) {
+    return payload.user.data as T
+  }
+
+  // Handles authentication responses that contain:
+  // {
+  //   user: {...},
+  //   access_token: "..."
+  // }
   try {
     const auth = extractAuthPayload(payload)
+
     if (isRecord(auth.user) && 'id' in auth.user) {
       return auth.user as T
     }
-    if (isRecord(auth.user) && isRecord(auth.user.data) && 'id' in auth.user.data) {
+
+    if (
+      isRecord(auth.user) &&
+      isRecord(auth.user.data) &&
+      'id' in auth.user.data
+    ) {
       return auth.user.data as T
     }
   } catch {
@@ -57,7 +113,11 @@ export function unwrapUser<T extends object>(payload: unknown): T | null {
 }
 
 export function unwrapRecord<T extends object>(payload: unknown): T | null {
-  if (isRecord(payload) && isRecord(payload.data) && 'id' in payload.data) {
+  if (
+    isRecord(payload) &&
+    isRecord(payload.data) &&
+    'id' in payload.data
+  ) {
     return payload.data as T
   }
 
@@ -83,7 +143,13 @@ export function unwrapPaginated<T>(payload: unknown): {
   lastPage: number
 } {
   const items = unwrapList<T>(payload)
-  const meta = isRecord(payload) && isRecord(payload.meta) ? payload.meta : isRecord(payload) ? payload : {}
+
+  const meta =
+    isRecord(payload) && isRecord(payload.meta)
+      ? payload.meta
+      : isRecord(payload)
+        ? payload
+        : {}
 
   return {
     items,
@@ -99,25 +165,45 @@ export function extractAuthPayload(payload: unknown): {
   expires_at?: string
 } {
   const root = isRecord(payload) ? payload : {}
-  const nested = isRecord(root.data) ? root.data : root
-  const source = isRecord(nested) && 'access_token' in nested ? nested : root
 
-  const token = typeof source.access_token === 'string' ? source.access_token : ''
+  const nested = isRecord(root.data) ? root.data : root
+
+  const source =
+    isRecord(nested) && 'access_token' in nested
+      ? nested
+      : root
+
+  const token =
+    typeof source.access_token === 'string'
+      ? source.access_token
+      : ''
+
   const user = source.user
 
   if (!token || user == null) {
-    throw new Error('Authentication response was missing a user or access token.')
+    throw new Error(
+      'Authentication response was missing a user or access token.',
+    )
   }
 
   return {
     user,
     access_token: token,
-    token_type: typeof source.token_type === 'string' ? source.token_type : undefined,
-    expires_at: typeof source.expires_at === 'string' ? source.expires_at : undefined,
+    token_type:
+      typeof source.token_type === 'string'
+        ? source.token_type
+        : undefined,
+    expires_at:
+      typeof source.expires_at === 'string'
+        ? source.expires_at
+        : undefined,
   }
 }
 
-export function getApiErrorMessage(error: unknown, fallback = 'Something went wrong. Please try again.'): string {
+export function getApiErrorMessage(
+  error: unknown,
+  fallback = 'Something went wrong. Please try again.',
+): string {
   if (
     isRecord(error) &&
     isRecord(error.response) &&
@@ -125,13 +211,20 @@ export function getApiErrorMessage(error: unknown, fallback = 'Something went wr
   ) {
     const data = error.response.data
 
-    if (typeof data.message === 'string' && data.message.trim()) {
+    if (
+      typeof data.message === 'string' &&
+      data.message.trim()
+    ) {
       return data.message
     }
 
     if (isRecord(data.errors)) {
       const first = Object.values(data.errors).flat()[0]
-      if (typeof first === 'string' && first.trim()) {
+
+      if (
+        typeof first === 'string' &&
+        first.trim()
+      ) {
         return first
       }
     }
@@ -144,7 +237,13 @@ export function getApiErrorMessage(error: unknown, fallback = 'Something went wr
   return fallback
 }
 
-export function isAuthRequestUrl(url: string | undefined): boolean {
+export function isAuthRequestUrl(
+  url: string | undefined,
+): boolean {
   if (!url) return false
-  return url.includes('/login') || url.includes('/register')
+
+  return (
+    url.includes('/login') ||
+    url.includes('/register')
+  )
 }

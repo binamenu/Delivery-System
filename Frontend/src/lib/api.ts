@@ -25,10 +25,13 @@ api.interceptors.request.use((config) => {
     return config
   }
 
-  const token = localStorage.getItem('token')
+  const token =
+    localStorage.getItem('token') || sessionStorage.getItem('token')
+
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
+
   return config
 })
 
@@ -38,14 +41,18 @@ api.interceptors.response.use(
     const status = error.response?.status
     const requestUrl = String(error.config?.url ?? '')
     const method = String(error.config?.method ?? 'get').toLowerCase()
-   const skipRedirect =
-  isAuthRequestUrl(requestUrl) ||
-  requestUrl.includes('/orders') ||
-  requestUrl.includes('/profile') ||
-  (method === 'get' && requestUrl.includes('/categories'))
+
+    const skipRedirect =
+      isAuthRequestUrl(requestUrl) ||
+      requestUrl.includes('/orders') ||
+      requestUrl.includes('/profile') ||
+      (method === 'get' && requestUrl.includes('/categories'))
 
     if (status === 401 && !skipRedirect) {
+      
       localStorage.removeItem('token')
+      sessionStorage.removeItem('token')
+
       window.location.href = '/login'
     }
 

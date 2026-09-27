@@ -8,14 +8,17 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class DriverProfile extends Model
 {
-    protected $fillable = [
-        'vehicle_type',
-        'license_number',
-        'is_online',
-    ];
+protected $fillable = [
+    'vehicle_model',
+    'vehicle_type',
+    'license_number',
+    'approval_status',
+    'is_online',
+];
 
     protected $casts = [
         'is_online' => 'boolean',
+        'approval_status' => 'string',
     ];
 
     /**

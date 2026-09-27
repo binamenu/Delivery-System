@@ -18,6 +18,11 @@ interface UserApiRecord {
   created_at?: string
 }
 
+interface AdminCreateUserResponse {
+  user?: UserApiRecord
+  temporary_password?: string
+}
+
 const REGISTERED_USERS_KEY = 'admin-registered-users'
 
 function readRegisteredUsers(): AdminUser[] {
@@ -52,65 +57,47 @@ export function mapUser(record: UserApiRecord): AdminUser {
 
 export function toLocalPhone(phone: string): string {
   const digits = phone.replace(/\D/g, '')
+
   if (/^09\d{8}$/.test(digits)) return digits
   if (/^9\d{8}$/.test(digits)) return `0${digits}`
   if (/^2519\d{8}$/.test(digits)) return `0${digits.slice(3)}`
+
   return digits
-}
-
-function usernameFromEmail(email: string): string {
-  const base = email
-    .split('@')[0]
-    .toLowerCase()
-    .replace(/[^a-z0-9_-]/g, '_')
-    .replace(/_+/g, '_')
-    .replace(/^_|_$/g, '')
-
-  return `${base || 'user'}_${Date.now().toString(36)}`
-}
-
-function generatePassword(): string {
-  return `Td${crypto.randomUUID().replace(/-/g, '').slice(0, 10)}A1`
 }
 
 function mergeUsers(users: AdminUser[]): AdminUser[] {
   const byId = new Map<number, AdminUser>()
+
   for (const user of users) {
     const existing = byId.get(user.id)
     byId.set(user.id, existing ? { ...existing, ...user } : user)
   }
+
   return Array.from(byId.values()).sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    (a, b) =>
+      new Date(b.createdAt).getTime() -
+      new Date(a.createdAt).getTime(),
   )
 }
 
-async function registerAccount(input: {
-  name: string
-  email: string
-  phone: string
-}): Promise<AdminUser> {
-  const phone = toLocalPhone(input.phone)
-  if (!/^09\d{8}$/.test(phone)) {
-    throw new Error('Phone must be an Ethiopian number in 09xxxxxxxx format.')
-  }
-
-  const password = generatePassword()
-  const response = await api.post('/register', {
-    name: input.name.trim(),
-    email: input.email.trim(),
-    username: usernameFromEmail(input.email),
-    phone,
-    password,
-    password_confirmation: password,
-  })
+async function createAdminUser(
+  endpoint: string,
+  payload: Record<string, string>,
+): Promise<AdminUser> {
+  const response = await api.post<AdminCreateUserResponse>(
+    endpoint,
+    payload,
+  )
 
   const record = unwrapUser<UserApiRecord>(response.data)
+
   if (!record) {
-    throw new Error('Register response was missing a user.')
+    throw new Error('Admin registration response was missing a user.')
   }
 
   const user = mapUser(record)
   cacheRegisteredUser(user)
+
   return user
 }
 
@@ -120,7 +107,10 @@ export async function fetchUsers(): Promise<AdminUser[]> {
   try {
     const profileResponse = await api.get('/profile')
     const profile = unwrapUser<UserApiRecord>(profileResponse.data)
-    if (profile) collected.push(mapUser(profile))
+
+    if (profile) {
+      collected.push(mapUser(profile))
+    }
   } catch {
     // Profile can fail without blocking locally registered users.
   }
@@ -128,18 +118,52 @@ export async function fetchUsers(): Promise<AdminUser[]> {
   return mergeUsers(collected)
 }
 
-export async function createDriver(input: RegisterDriverInput): Promise<AdminUser> {
-  const user = await registerAccount(input)
-  const withVehicle = {
+export async function createDriver(
+  input: RegisterDriverInput,
+): Promise<AdminUser> {
+  const phone = toLocalPhone(input.phone)
+
+  if (!/^09\d{8}$/.test(phone)) {
+    throw new Error(
+      'Phone must be an Ethiopian number in 09xxxxxxxx format.',
+    )
+  }
+
+  const user = await createAdminUser('/admin/users/drivers', {
+    name: input.name.trim(),
+    email: input.email.trim(),
+    phone,
+    vehicle_type: input.vehicleType.trim(),
+    vehicle_model: input.vehicleModel.trim(),
+    license_number: input.plateNumber.trim(),
+  })
+
+  const withVehicle: AdminUser = {
     ...user,
     vehicleType: input.vehicleType,
     vehicleModel: input.vehicleModel,
     plateNumber: input.plateNumber,
   }
+
   cacheRegisteredUser(withVehicle)
+
   return withVehicle
 }
 
-export async function createRestaurantManager(input: RegisterManagerInput): Promise<AdminUser> {
-  return registerAccount(input)
+export async function createRestaurantManager(
+  input: RegisterManagerInput,
+): Promise<AdminUser> {
+  const phone = toLocalPhone(input.phone)
+
+  if (!/^09\d{8}$/.test(phone)) {
+    throw new Error(
+      'Phone must be an Ethiopian number in 09xxxxxxxx format.',
+    )
+  }
+
+  return createAdminUser('/admin/users/restaurant-managers', {
+    name: input.name.trim(),
+    email: input.email.trim(),
+    phone,
+  })
 }
